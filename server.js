@@ -11,6 +11,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = path.join(__dirname, 'data');
 const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
+const ACTIVITY_FILE = path.join(DATA_DIR, 'activity.json');
 
 // Middleware
 app.use(express.json({ limit: '10mb' }));
@@ -47,6 +48,42 @@ function writeTasks(tasks) {
   } catch (err) {
     console.error('Error writing tasks file:', err.message);
   }
+}
+
+// ── Activity/Comments Persistence ────────────────────────────────────
+
+function readActivity() {
+  ensureDataDir();
+  if (!fs.existsSync(ACTIVITY_FILE)) return {};
+  try {
+    const raw = fs.readFileSync(ACTIVITY_FILE, 'utf-8');
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error('Error reading activity file:', err.message);
+    return {};
+  }
+}
+
+function writeActivity(activity) {
+  ensureDataDir();
+  try {
+    fs.writeFileSync(ACTIVITY_FILE, JSON.stringify(activity, null, 2));
+  } catch (err) {
+    console.error('Error writing activity file:', err.message);
+  }
+}
+
+function addActivityEntry(taskId, entry) {
+  const activity = readActivity();
+  const key = String(taskId);
+  if (!activity[key]) activity[key] = [];
+  activity[key].push({
+    id: Date.now() + Math.random(),
+    ...entry,
+    timestamp: new Date().toISOString()
+  });
+  writeActivity(activity);
+  return activity[key];
 }
 
 // ── Seed Function ────────────────────────────────────────────────────
@@ -141,6 +178,8 @@ app.put('/api/tasks/:id', (req, res) => {
     return res.status(404).json({ error: "Task not found" });
   }
 
+  const oldTask = { ...tasks[idx] };
+
   // Merge updates, preserve id and createdAt
   const updated = {
     ...tasks[idx],
@@ -152,6 +191,21 @@ app.put('/api/tasks/:id', (req, res) => {
 
   tasks[idx] = updated;
   writeTasks(tasks);
+
+  // Auto-log activity for tracked field changes
+  const trackedFields = ['status', 'owner', 'priority', 'dueDate', 'title'];
+  trackedFields.forEach(field => {
+    if (req.body[field] !== undefined && req.body[field] !== oldTask[field]) {
+      addActivityEntry(id, {
+        type: 'field_change',
+        field: field,
+        oldValue: oldTask[field],
+        newValue: req.body[field],
+        actor: req.body._actor || 'User'
+      });
+    }
+  });
+
   res.json(updated);
 });
 
@@ -173,6 +227,8 @@ app.delete('/api/tasks/:id', (req, res) => {
 // POST /api/seed - Reset and re-seed all tasks from templates
 app.post('/api/seed', (req, res) => {
   const tasks = seedTasks();
+  // Also reset activity data
+  writeActivity({});
   res.json({
     message: `Database reset. Seeded ${tasks.length} tasks across ${BOARDS.length} boards.`,
     count: tasks.length,
@@ -194,6 +250,51 @@ app.get('/api/config', (req, res) => {
     })),
     totalTemplates: BOARDS.reduce((sum, b) => sum + b.tasks.length, 0)
   });
+});
+
+// ── Comments & Activity Routes ────────────────────────────────────────
+
+// GET /api/tasks/:id/activity - Get all activity for a task (comments + changes)
+app.get('/api/tasks/:id/activity', (req, res) => {
+  const id = req.params.id;
+  const activity = readActivity();
+  const entries = activity[id] || [];
+  res.json(entries.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)));
+});
+
+// POST /api/tasks/:id/comments - Add a comment to a task
+app.post('/api/tasks/:id/comments', (req, res) => {
+  const id = parseInt(req.params.id);
+  const tasks = readTasks() || [];
+  const task = tasks.find(t => t.id === id);
+
+  if (!task) {
+    return res.status(404).json({ error: "Task not found" });
+  }
+
+  const entry = {
+    type: 'comment',
+    author: req.body.author || 'User',
+    text: req.body.text || '',
+    actor: req.body.author || 'User'
+  };
+
+  const entries = addActivityEntry(id, entry);
+  res.status(201).json(entries[entries.length - 1]);
+});
+
+// GET /api/people - Return team member roles with avatar colors
+app.get('/api/people', (req, res) => {
+  res.json([
+    { id: 'director', name: 'Director', initials: 'DR', color: '#7B68EE' },
+    { id: 'manager', name: 'Manager', initials: 'MG', color: '#FF6B6B' },
+    { id: 'lead', name: 'Lead', initials: 'LD', color: '#4ECDC4' },
+    { id: 'sr-analyst', name: 'Sr Analyst', initials: 'SA', color: '#45B7D1' },
+    { id: 'analyst', name: 'Analyst', initials: 'AN', color: '#96CEB4' },
+    { id: 'admin', name: 'Admin', initials: 'AD', color: '#FFEAA7' },
+    { id: 'legal', name: 'Legal', initials: 'LG', color: '#DDA0DD' },
+    { id: 'finance', name: 'Finance', initials: 'FN', color: '#98D8C8' },
+  ]);
 });
 
 // Catch-all: serve index.html for client-side routing
