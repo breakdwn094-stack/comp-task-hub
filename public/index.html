@@ -14,13 +14,109 @@
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
-    html, body, #root { margin: 0; padding: 0; height: 100%; font-family: 'Figtree', system-ui, -apple-system, sans-serif; background: #f6f7fb; }
+
+    /* ===== THEME CSS VARIABLES ===== */
+    :root, [data-theme="light"] {
+      --bg-primary: #f6f7fb;
+      --bg-surface: #ffffff;
+      --bg-surface-secondary: #f6f7fb;
+      --bg-hover: #f5f6ff;
+      --bg-muted: #e6e9ef;
+      --text-primary: #323338;
+      --text-secondary: #676879;
+      --text-tertiary: #9699a8;
+      --border: #e6e9ef;
+      --border-secondary: #c3c6d4;
+      --sidebar-bg: #292f4c;
+      --sidebar-border: rgba(255,255,255,0.08);
+      --sidebar-input-bg: rgba(255,255,255,0.08);
+      --sidebar-input-border: rgba(255,255,255,0.1);
+      --dropdown-bg: #ffffff;
+      --dropdown-hover: #f0f1f5;
+      --input-bg: #ffffff;
+      --input-border: #c3c6d4;
+      --scrollbar-thumb: #c3c6d4;
+      --scrollbar-hover: #a0a4b8;
+      --modal-bg: #ffffff;
+      --overlay-bg: rgba(0,0,0,0.35);
+      --detail-overlay: rgba(0,0,0,0.3);
+      --cell-border: rgba(0,0,0,0.06);
+      --cell-edit-hover: rgba(0,115,234,0.04);
+      --shadow-sm: 0 1px 4px rgba(0,0,0,0.06);
+      --shadow-card: 0 1px 4px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+      --shadow-xl: 0 12px 40px rgba(0,0,0,0.2);
+      --shadow-panel: -4px 0 24px rgba(0,0,0,0.12);
+      --toast-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      --active-tab-bg: #cce5ff;
+      --active-tab-border: rgba(0,115,234,0.19);
+      --chart-text: #323338;
+      --chart-grid: #e6e9ef;
+      --comment-bg: #f6f7fb;
+      --comment-border: #e6e9ef;
+      --accent: #0073ea;
+      --accent-muted: rgba(0,115,234,0.25);
+      --sidebar-hover-bg: rgba(255,255,255,0.08);
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #1e1f25;
+      --bg-surface: #2c2d35;
+      --bg-surface-secondary: #25262e;
+      --bg-hover: #35363f;
+      --bg-muted: #383a47;
+      --text-primary: #d5d8df;
+      --text-secondary: #9699a8;
+      --text-tertiary: #676879;
+      --border: #383a47;
+      --border-secondary: #4b4e5a;
+      --sidebar-bg: #16182a;
+      --sidebar-border: rgba(255,255,255,0.06);
+      --sidebar-input-bg: rgba(255,255,255,0.06);
+      --sidebar-input-border: rgba(255,255,255,0.08);
+      --dropdown-bg: #33343d;
+      --dropdown-hover: #3e3f49;
+      --input-bg: #383a47;
+      --input-border: #4b4e5a;
+      --scrollbar-thumb: #4b4e5a;
+      --scrollbar-hover: #5c5f6e;
+      --modal-bg: #2c2d35;
+      --overlay-bg: rgba(0,0,0,0.55);
+      --detail-overlay: rgba(0,0,0,0.5);
+      --cell-border: rgba(255,255,255,0.06);
+      --cell-edit-hover: rgba(0,115,234,0.08);
+      --shadow-sm: 0 1px 4px rgba(0,0,0,0.25);
+      --shadow-card: 0 1px 4px rgba(0,0,0,0.2);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.35);
+      --shadow-xl: 0 12px 40px rgba(0,0,0,0.4);
+      --shadow-panel: -4px 0 24px rgba(0,0,0,0.3);
+      --toast-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      --active-tab-bg: rgba(0,115,234,0.2);
+      --active-tab-border: rgba(0,115,234,0.3);
+      --chart-text: #9699a8;
+      --chart-grid: #383a47;
+      --comment-bg: #25262e;
+      --comment-border: #383a47;
+      --accent: #0073ea;
+      --accent-muted: rgba(0,115,234,0.3);
+      --sidebar-hover-bg: rgba(255,255,255,0.06);
+    }
+
+    html, body, #root {
+      margin: 0; padding: 0; height: 100%;
+      font-family: 'Figtree', system-ui, -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      transition: background 0.25s, color 0.25s;
+    }
 
     /* Monday.com style scrollbar */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #c3c6d4; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #a0a4b8; }
+    ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
 
     /* Animations */
     @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
@@ -37,39 +133,40 @@
 
     /* Monday.com table styles */
     .monday-table { border-collapse: separate; border-spacing: 0; width: 100%; }
-    .monday-table th { position: sticky; top: 0; z-index: 5; background: #fff; }
+    .monday-table th { position: sticky; top: 0; z-index: 5; background: var(--bg-surface); }
 
     .group-header { cursor: pointer; user-select: none; }
     .group-header:hover { filter: brightness(0.95); }
 
-    .task-row { border-bottom: 1px solid #e6e9ef; transition: background 0.1s; }
-    .task-row:hover { background: #f5f6ff !important; }
+    .task-row { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+    .task-row:hover { background: var(--bg-hover) !important; }
 
     /* Inline edit cell hover indicator */
     .cell-editable { cursor: pointer; position: relative; transition: background 0.1s; min-height: 38px; display: flex; align-items: center; }
-    .cell-editable:hover { background: rgba(0,115,234,0.04); }
+    .cell-editable:hover { background: var(--cell-edit-hover); }
 
     /* Status/Priority cells */
     .status-cell, .priority-cell {
       display: flex; align-items: center; justify-content: center;
       padding: 4px 0; font-size: 13px; font-weight: 500;
       cursor: pointer; transition: filter 0.15s; min-height: 38px;
-      border-right: 1px solid rgba(0,0,0,0.06);
+      border-right: 1px solid var(--cell-border);
     }
     .status-cell:hover, .priority-cell:hover { filter: brightness(0.92); }
 
     /* Dropdown */
     .cell-dropdown {
       position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
-      background: #fff; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      background: var(--dropdown-bg); border-radius: 8px; box-shadow: var(--shadow-lg);
       z-index: 50; min-width: 160px; padding: 6px;
       animation: slideDown 0.15s ease-out;
     }
     .cell-dropdown-option {
       padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;
       display: flex; align-items: center; gap: 8px; transition: background 0.1s;
+      color: var(--text-primary);
     }
-    .cell-dropdown-option:hover { background: #f0f1f5; }
+    .cell-dropdown-option:hover { background: var(--dropdown-hover); }
 
     /* Owner avatar */
     .owner-avatar {
@@ -85,8 +182,8 @@
       display: flex; align-items: center; gap: 8px;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .sidebar-board-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
-    .sidebar-board-item.active { background: rgba(0,115,234,0.25); color: #fff; }
+    .sidebar-board-item:hover { background: var(--sidebar-hover-bg); color: #fff; }
+    .sidebar-board-item.active { background: var(--accent-muted); color: #fff; }
 
     .sidebar-domain-header {
       padding: 6px 12px; cursor: pointer; display: flex; align-items: center;
@@ -98,30 +195,50 @@
     /* View tabs */
     .view-tab {
       padding: 6px 14px; border-radius: 4px; font-size: 13px; font-weight: 500;
-      cursor: pointer; transition: all 0.15s; color: #676879; border: 1px solid transparent;
+      cursor: pointer; transition: all 0.15s; color: var(--text-secondary); border: 1px solid transparent;
     }
-    .view-tab:hover { background: #e6e9ef; }
-    .view-tab.active { background: #cce5ff; color: #0073ea; border-color: #0073ea30; }
+    .view-tab:hover { background: var(--bg-muted); }
+    .view-tab.active { background: var(--active-tab-bg); color: var(--accent); border-color: var(--active-tab-border); }
 
     /* Detail panel */
     .detail-panel {
       position: fixed; right: 0; top: 0; bottom: 0; width: 480px;
-      background: #fff; box-shadow: -4px 0 24px rgba(0,0,0,0.12); z-index: 100;
+      background: var(--bg-surface); box-shadow: var(--shadow-panel); z-index: 100;
       animation: slideInRight 0.25s ease-out; display: flex; flex-direction: column;
     }
 
     /* Kanban card */
     .kanban-card {
-      background: #fff; border-radius: 8px; padding: 12px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08); cursor: pointer;
-      transition: box-shadow 0.15s, transform 0.15s; border: 1px solid #e6e9ef;
+      background: var(--bg-surface); border-radius: 8px; padding: 12px;
+      box-shadow: var(--shadow-card); cursor: pointer;
+      transition: box-shadow 0.15s, transform 0.15s; border: 1px solid var(--border);
     }
-    .kanban-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); transform: translateY(-1px); }
+    .kanban-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
 
     /* Metric card */
     .metric-card {
-      background: #fff; border-radius: 8px; padding: 20px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06); border: 1px solid #e6e9ef;
+      background: var(--bg-surface); border-radius: 8px; padding: 20px;
+      box-shadow: var(--shadow-sm); border: 1px solid var(--border);
+    }
+
+    /* Theme toggle button */
+    .theme-toggle {
+      display: flex; align-items: center; justify-content: center;
+      width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--bg-surface); cursor: pointer; transition: all 0.2s;
+      color: var(--text-secondary);
+    }
+    .theme-toggle:hover { background: var(--bg-muted); color: var(--text-primary); }
+
+    /* Dark mode adjustments for select elements */
+    select, input[type="text"], input[type="date"], textarea {
+      color-scheme: light;
+    }
+    [data-theme="dark"] select,
+    [data-theme="dark"] input[type="text"],
+    [data-theme="dark"] input[type="date"],
+    [data-theme="dark"] textarea {
+      color-scheme: dark;
     }
   </style>
 </head>
@@ -129,7 +246,7 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useMemo, useEffect, useCallback, useRef } = React;
+    const { useState, useMemo, useEffect, useCallback, useRef, createContext, useContext } = React;
     const { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } = window.Recharts;
 
     // ===================== CONSTANTS =====================
@@ -223,6 +340,8 @@
     const IcoAlert = mkI(`<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>`);
     const IcoSend = mkI(`<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>`);
     const IcoMenu = mkI(`<line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>`);
+    const IcoSun = mkI(`<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`);
+    const IcoMoon = mkI(`<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`);
 
     // ===================== HELPERS =====================
     const fmtDate = (d) => { if(!d) return ""; const dt = new Date(d); return dt.toLocaleDateString("en-US", {month:"short",day:"numeric"}); };
@@ -245,7 +364,7 @@
       useEffect(() => { const t = setTimeout(onClose, 2500); return () => clearTimeout(t); }, [onClose]);
       const bg = type === "success" ? "#00c875" : "#e2445c";
       return (
-        <div className="toast-anim" style={{position:"fixed",top:16,right:16,zIndex:200,background:bg,color:"#fff",padding:"10px 20px",borderRadius:8,fontSize:14,fontWeight:500,boxShadow:"0 4px 12px rgba(0,0,0,0.15)"}}>
+        <div className="toast-anim" style={{position:"fixed",top:16,right:16,zIndex:200,background:bg,color:"#fff",padding:"10px 20px",borderRadius:8,fontSize:14,fontWeight:500,boxShadow:"var(--toast-shadow)"}}>
           {message}
         </div>
       );
@@ -280,7 +399,7 @@
           options={STATUS_ORDER.map(id => ({ id, ...STATUS_MAP[id] }))}
           value={value}
           onSelect={onChange}
-          cellStyle={{ background: meta.color, color: meta.textColor, justifyContent:"center", textAlign:"center", fontSize:13, fontWeight:500, padding:"0 8px", minHeight:38, display:"flex", alignItems:"center", cursor:"pointer", borderRight:"1px solid rgba(0,0,0,0.06)" }}
+          cellStyle={{ background: meta.color, color: meta.textColor, justifyContent:"center", textAlign:"center", fontSize:13, fontWeight:500, padding:"0 8px", minHeight:38, display:"flex", alignItems:"center", cursor:"pointer", borderRight:"1px solid var(--cell-border)" }}
           renderValue={() => meta.label}
           renderOption={(opt) => (
             <React.Fragment>
@@ -300,7 +419,7 @@
           options={["critical","high","medium","low"].map(id => ({ id, ...PRIORITY_MAP[id] }))}
           value={value}
           onSelect={onChange}
-          cellStyle={{ background: meta.color, color: meta.textColor, justifyContent:"center", textAlign:"center", fontSize:13, fontWeight:500, padding:"0 8px", minHeight:38, display:"flex", alignItems:"center", cursor:"pointer", borderRight:"1px solid rgba(0,0,0,0.06)" }}
+          cellStyle={{ background: meta.color, color: meta.textColor, justifyContent:"center", textAlign:"center", fontSize:13, fontWeight:500, padding:"0 8px", minHeight:38, display:"flex", alignItems:"center", cursor:"pointer", borderRight:"1px solid var(--cell-border)" }}
           renderValue={() => meta.label}
           renderOption={(opt) => (
             <React.Fragment>
@@ -319,11 +438,11 @@
           options={OWNERS}
           value={value}
           onSelect={onChange}
-          cellStyle={{ padding:"0 10px", minHeight:38, display:"flex", alignItems:"center", cursor:"pointer", gap:6, borderRight:"1px solid rgba(0,0,0,0.06)", fontSize:13 }}
+          cellStyle={{ padding:"0 10px", minHeight:38, display:"flex", alignItems:"center", cursor:"pointer", gap:6, borderRight:"1px solid var(--cell-border)", fontSize:13 }}
           renderValue={(v) => (
             <React.Fragment>
               <span className="owner-avatar" style={{background:ownerColor(v),width:26,height:26,fontSize:10}}>{getInitials(v)}</span>
-              <span style={{color:"#323338"}}>{v}</span>
+              <span style={{color:"var(--text-primary)"}}>{v}</span>
             </React.Fragment>
           )}
           renderOption={(opt) => (
@@ -344,16 +463,16 @@
 
       if (editing) {
         return (
-          <div ref={ref} style={{padding:"0 6px",minHeight:38,display:"flex",alignItems:"center",borderRight:"1px solid rgba(0,0,0,0.06)"}} onClick={e => e.stopPropagation()}>
+          <div ref={ref} style={{padding:"0 6px",minHeight:38,display:"flex",alignItems:"center",borderRight:"1px solid var(--cell-border)"}} onClick={e => e.stopPropagation()}>
             <input type="date" defaultValue={value?.split("T")[0] || ""} autoFocus
-              style={{border:"1px solid #0073ea",borderRadius:4,padding:"2px 6px",fontSize:13,outline:"none",width:"100%"}}
+              style={{border:"1px solid var(--accent)",borderRadius:4,padding:"2px 6px",fontSize:13,outline:"none",width:"100%",background:"var(--input-bg)",color:"var(--text-primary)"}}
               onBlur={(e) => { onChange(e.target.value); setEditing(false); }}
               onKeyDown={(e) => { if(e.key==="Enter"){onChange(e.target.value);setEditing(false);} }} />
           </div>
         );
       }
       return (
-        <div className="cell-editable" style={{padding:"0 10px",borderRight:"1px solid rgba(0,0,0,0.06)",fontSize:13,color:"#323338"}} onClick={(e) => { e.stopPropagation(); setEditing(true); }}>
+        <div className="cell-editable" style={{padding:"0 10px",borderRight:"1px solid var(--cell-border)",fontSize:13,color:"var(--text-primary)"}} onClick={(e) => { e.stopPropagation(); setEditing(true); }}>
           {fmtDate(value) || "-"}
         </div>
       );
@@ -371,7 +490,7 @@
         return (
           <div style={{padding:"0 10px",minHeight:38,display:"flex",alignItems:"center",flex:1}} onClick={e => e.stopPropagation()}>
             <input ref={ref} type="text" value={text} autoFocus
-              style={{border:"1px solid #0073ea",borderRadius:4,padding:"4px 8px",fontSize:13,outline:"none",width:"100%",fontWeight:500}}
+              style={{border:"1px solid var(--accent)",borderRadius:4,padding:"4px 8px",fontSize:13,outline:"none",width:"100%",fontWeight:500,background:"var(--input-bg)",color:"var(--text-primary)"}}
               onChange={(e) => setText(e.target.value)}
               onBlur={() => { if(text.trim() && text !== value) onChange(text); setEditing(false); }}
               onKeyDown={(e) => { if(e.key==="Enter"){ if(text.trim() && text !== value) onChange(text); setEditing(false); } if(e.key==="Escape") setEditing(false); }} />
@@ -379,10 +498,10 @@
         );
       }
       return (
-        <div style={{padding:"0 10px",minHeight:38,display:"flex",alignItems:"center",flex:1,borderRight:"1px solid rgba(0,0,0,0.06)",cursor:"pointer"}}
+        <div style={{padding:"0 10px",minHeight:38,display:"flex",alignItems:"center",flex:1,borderRight:"1px solid var(--cell-border)",cursor:"pointer"}}
           onClick={onClick}
           onDoubleClick={(e) => { e.stopPropagation(); setEditing(true); }}>
-          <span style={{fontSize:13,fontWeight:500,color:"#323338",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{value}</span>
+          <span style={{fontSize:13,fontWeight:500,color:"var(--text-primary)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{value}</span>
         </div>
       );
     }
@@ -431,28 +550,28 @@
           {/* Filter bar */}
           <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:16,flexWrap:"wrap"}}>
             <div style={{position:"relative",flex:"1 1 300px",maxWidth:400}}>
-              <IcoSearch size={16} color="#676879" className="" />
+              <IcoSearch size={16} color="var(--text-secondary)" className="" />
               <input type="text" placeholder="Search tasks..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                style={{width:"100%",padding:"7px 12px 7px 32px",border:"1px solid #c3c6d4",borderRadius:4,fontSize:13,outline:"none",fontFamily:"inherit",position:"relative"}} />
+                style={{width:"100%",padding:"7px 12px 7px 32px",border:"1px solid var(--border-secondary)",borderRadius:4,fontSize:13,outline:"none",fontFamily:"inherit",position:"relative",background:"var(--input-bg)",color:"var(--text-primary)"}} />
               <div style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}}>
               </div>
             </div>
             <select value={filters.status||""} onChange={e => setFilters({...filters, status:e.target.value||null})}
-              style={{padding:"7px 10px",border:"1px solid #c3c6d4",borderRadius:4,fontSize:13,fontFamily:"inherit",background:"#fff",cursor:"pointer"}}>
+              style={{padding:"7px 10px",border:"1px solid var(--border-secondary)",borderRadius:4,fontSize:13,fontFamily:"inherit",background:"var(--input-bg)",color:"var(--text-primary)",cursor:"pointer"}}>
               <option value="">All Statuses</option>
               {STATUS_ORDER.map(s => <option key={s} value={s}>{STATUS_MAP[s].label}</option>)}
             </select>
             <select value={filters.priority||""} onChange={e => setFilters({...filters, priority:e.target.value||null})}
-              style={{padding:"7px 10px",border:"1px solid #c3c6d4",borderRadius:4,fontSize:13,fontFamily:"inherit",background:"#fff",cursor:"pointer"}}>
+              style={{padding:"7px 10px",border:"1px solid var(--border-secondary)",borderRadius:4,fontSize:13,fontFamily:"inherit",background:"var(--input-bg)",color:"var(--text-primary)",cursor:"pointer"}}>
               <option value="">All Priorities</option>
               {["critical","high","medium","low"].map(p => <option key={p} value={p}>{PRIORITY_MAP[p].label}</option>)}
             </select>
             <select value={filters.owner||""} onChange={e => setFilters({...filters, owner:e.target.value||null})}
-              style={{padding:"7px 10px",border:"1px solid #c3c6d4",borderRadius:4,fontSize:13,fontFamily:"inherit",background:"#fff",cursor:"pointer"}}>
+              style={{padding:"7px 10px",border:"1px solid var(--border-secondary)",borderRadius:4,fontSize:13,fontFamily:"inherit",background:"var(--input-bg)",color:"var(--text-primary)",cursor:"pointer"}}>
               <option value="">All Owners</option>
               {OWNERS.map(o => <option key={o} value={o}>{o}</option>)}
             </select>
-            <span style={{fontSize:13,color:"#676879"}}>{boardTasks.length} tasks</span>
+            <span style={{fontSize:13,color:"var(--text-secondary)"}}>{boardTasks.length} tasks</span>
           </div>
 
           {/* Grouped table */}
@@ -465,23 +584,23 @@
               <div key={status} style={{marginBottom:8}}>
                 <GroupHeader status={status} count={groupTasks.length} collapsed={isCollapsed} onToggle={() => toggleGroup(status)} color={groupColor} />
                 {!isCollapsed && (
-                  <div style={{border:"1px solid #e6e9ef",borderTop:"none",borderRadius:"0 0 6px 6px",overflow:"hidden",background:"#fff"}}>
+                  <div style={{border:"1px solid var(--border)",borderTop:"none",borderRadius:"0 0 6px 6px",overflow:"hidden",background:"var(--bg-surface)"}}>
                     {/* Column headers */}
-                    <div style={{display:"flex",borderBottom:"1px solid #e6e9ef",background:"#f6f7fb"}}>
-                      <div style={{width:40,minHeight:32,display:"flex",alignItems:"center",justifyContent:"center",borderRight:"1px solid rgba(0,0,0,0.06)"}}>
+                    <div style={{display:"flex",borderBottom:"1px solid var(--border)",background:"var(--bg-surface-secondary)"}}>
+                      <div style={{width:40,minHeight:32,display:"flex",alignItems:"center",justifyContent:"center",borderRight:"1px solid var(--cell-border)"}}>
                         <input type="checkbox" disabled style={{opacity:0.3}} />
                       </div>
-                      <div style={{flex:"1 1 300px",padding:"0 10px",minHeight:32,display:"flex",alignItems:"center",borderRight:"1px solid rgba(0,0,0,0.06)",fontSize:12,fontWeight:600,color:"#676879",textTransform:"uppercase",letterSpacing:"0.5px"}}>Task</div>
-                      <div style={{width:140,padding:"0 10px",minHeight:32,display:"flex",alignItems:"center",borderRight:"1px solid rgba(0,0,0,0.06)",fontSize:12,fontWeight:600,color:"#676879",textTransform:"uppercase",letterSpacing:"0.5px"}}>Owner</div>
-                      <div style={{width:120,minHeight:32,display:"flex",alignItems:"center",justifyContent:"center",borderRight:"1px solid rgba(0,0,0,0.06)",fontSize:12,fontWeight:600,color:"#676879",textTransform:"uppercase",letterSpacing:"0.5px"}}>Status</div>
-                      <div style={{width:100,minHeight:32,display:"flex",alignItems:"center",justifyContent:"center",borderRight:"1px solid rgba(0,0,0,0.06)",fontSize:12,fontWeight:600,color:"#676879",textTransform:"uppercase",letterSpacing:"0.5px"}}>Priority</div>
-                      <div style={{width:110,padding:"0 10px",minHeight:32,display:"flex",alignItems:"center",borderRight:"1px solid rgba(0,0,0,0.06)",fontSize:12,fontWeight:600,color:"#676879",textTransform:"uppercase",letterSpacing:"0.5px"}}>Due Date</div>
-                      {!boardId && <div style={{width:160,padding:"0 10px",minHeight:32,display:"flex",alignItems:"center",fontSize:12,fontWeight:600,color:"#676879",textTransform:"uppercase",letterSpacing:"0.5px"}}>Board</div>}
+                      <div style={{flex:"1 1 300px",padding:"0 10px",minHeight:32,display:"flex",alignItems:"center",borderRight:"1px solid var(--cell-border)",fontSize:12,fontWeight:600,color:"var(--text-secondary)",textTransform:"uppercase",letterSpacing:"0.5px"}}>Task</div>
+                      <div style={{width:140,padding:"0 10px",minHeight:32,display:"flex",alignItems:"center",borderRight:"1px solid var(--cell-border)",fontSize:12,fontWeight:600,color:"var(--text-secondary)",textTransform:"uppercase",letterSpacing:"0.5px"}}>Owner</div>
+                      <div style={{width:120,minHeight:32,display:"flex",alignItems:"center",justifyContent:"center",borderRight:"1px solid var(--cell-border)",fontSize:12,fontWeight:600,color:"var(--text-secondary)",textTransform:"uppercase",letterSpacing:"0.5px"}}>Status</div>
+                      <div style={{width:100,minHeight:32,display:"flex",alignItems:"center",justifyContent:"center",borderRight:"1px solid var(--cell-border)",fontSize:12,fontWeight:600,color:"var(--text-secondary)",textTransform:"uppercase",letterSpacing:"0.5px"}}>Priority</div>
+                      <div style={{width:110,padding:"0 10px",minHeight:32,display:"flex",alignItems:"center",borderRight:"1px solid var(--cell-border)",fontSize:12,fontWeight:600,color:"var(--text-secondary)",textTransform:"uppercase",letterSpacing:"0.5px"}}>Due Date</div>
+                      {!boardId && <div style={{width:160,padding:"0 10px",minHeight:32,display:"flex",alignItems:"center",fontSize:12,fontWeight:600,color:"var(--text-secondary)",textTransform:"uppercase",letterSpacing:"0.5px"}}>Board</div>}
                     </div>
                     {/* Task rows */}
                     {groupTasks.map(task => (
-                      <div key={task.id} className="task-row" style={{display:"flex",borderBottom:"1px solid #e6e9ef"}}>
-                        <div style={{width:40,minHeight:38,display:"flex",alignItems:"center",justifyContent:"center",borderRight:"1px solid rgba(0,0,0,0.06)"}}>
+                      <div key={task.id} className="task-row" style={{display:"flex",borderBottom:"1px solid var(--border)"}}>
+                        <div style={{width:40,minHeight:38,display:"flex",alignItems:"center",justifyContent:"center",borderRight:"1px solid var(--cell-border)"}}>
                           <input type="checkbox" style={{cursor:"pointer"}} onClick={e => e.stopPropagation()} />
                         </div>
                         <TitleCell value={task.title} onChange={(v) => onUpdate(task.id, {title:v})} onClick={() => onSelectTask(task)} />
@@ -489,12 +608,12 @@
                         <div style={{width:120}}><StatusCell value={task.status} onChange={(v) => onUpdate(task.id, {status:v})} /></div>
                         <div style={{width:100}}><PriorityCell value={task.priority} onChange={(v) => onUpdate(task.id, {priority:v})} /></div>
                         <div style={{width:110}}><DateCell value={task.dueDate} onChange={(v) => onUpdate(task.id, {dueDate:v})} /></div>
-                        {!boardId && <div style={{width:160,padding:"0 10px",minHeight:38,display:"flex",alignItems:"center",fontSize:12,color:"#676879",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{task.boardName}</div>}
+                        {!boardId && <div style={{width:160,padding:"0 10px",minHeight:38,display:"flex",alignItems:"center",fontSize:12,color:"var(--text-secondary)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{task.boardName}</div>}
                       </div>
                     ))}
                     {/* Group summary */}
-                    <div style={{display:"flex",borderTop:"2px solid "+groupColor,background:"#f6f7fb",minHeight:32}}>
-                      <div style={{flex:1,padding:"4px 16px",fontSize:12,color:"#676879",display:"flex",alignItems:"center"}}>
+                    <div style={{display:"flex",borderTop:"2px solid "+groupColor,background:"var(--bg-surface-secondary)",minHeight:32}}>
+                      <div style={{flex:1,padding:"4px 16px",fontSize:12,color:"var(--text-secondary)",display:"flex",alignItems:"center"}}>
                         {groupTasks.length} {groupTasks.length === 1 ? "task" : "tasks"}
                       </div>
                     </div>
@@ -505,7 +624,7 @@
           })}
 
           {boardTasks.length === 0 && (
-            <div style={{textAlign:"center",padding:60,color:"#676879"}}>
+            <div style={{textAlign:"center",padding:60,color:"var(--text-secondary)"}}>
               <p style={{fontSize:16,fontWeight:500}}>No tasks found</p>
               <p style={{fontSize:13,marginTop:8}}>Try adjusting your filters or search query</p>
             </div>
@@ -526,8 +645,8 @@
               <div key={status} style={{minWidth:260,maxWidth:300,flex:"1 1 260px"}}>
                 <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 4px",marginBottom:8}}>
                   <span style={{width:10,height:10,borderRadius:3,background:meta.color}}></span>
-                  <span style={{fontSize:14,fontWeight:600,color:"#323338"}}>{meta.label}</span>
-                  <span style={{fontSize:12,color:"#676879",background:"#e6e9ef",padding:"0 8px",borderRadius:10}}>{col.length}</span>
+                  <span style={{fontSize:14,fontWeight:600,color:"var(--text-primary)"}}>{meta.label}</span>
+                  <span style={{fontSize:12,color:"var(--text-secondary)",background:"var(--bg-muted)",padding:"0 8px",borderRadius:10}}>{col.length}</span>
                 </div>
                 <div style={{display:"flex",flexDirection:"column",gap:8}}>
                   {col.map(task => {
@@ -535,14 +654,14 @@
                     return (
                       <div key={task.id} className="kanban-card" onClick={() => onSelectTask(task)}
                         style={{borderLeft:`3px solid ${meta.color}`}}>
-                        <div style={{fontSize:13,fontWeight:500,color:"#323338",marginBottom:8,lineHeight:1.4}}>{task.title}</div>
+                        <div style={{fontSize:13,fontWeight:500,color:"var(--text-primary)",marginBottom:8,lineHeight:1.4}}>{task.title}</div>
                         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                           <div style={{display:"flex",alignItems:"center",gap:6}}>
                             <span className="owner-avatar" style={{background:ownerColor(task.owner),width:22,height:22,fontSize:9}}>{getInitials(task.owner)}</span>
-                            <span style={{fontSize:11,color:"#676879"}}>{task.owner}</span>
+                            <span style={{fontSize:11,color:"var(--text-secondary)"}}>{task.owner}</span>
                           </div>
                           <div style={{display:"flex",alignItems:"center",gap:6}}>
-                            <span style={{fontSize:11,color:"#676879"}}>{fmtDate(task.dueDate)}</span>
+                            <span style={{fontSize:11,color:"var(--text-secondary)"}}>{fmtDate(task.dueDate)}</span>
                             <span style={{width:8,height:8,borderRadius:2,background:pMeta.color}} title={pMeta.label}></span>
                           </div>
                         </div>
@@ -569,17 +688,17 @@
             const now = new Date();
             const isCurrent = now.getMonth() === idx;
             return (
-              <div key={month} style={{background:"#fff",borderRadius:8,padding:20,border:isCurrent?"2px solid #0073ea":"1px solid #e6e9ef",boxShadow:"0 1px 4px rgba(0,0,0,0.04)"}}>
+              <div key={month} style={{background:"var(--bg-surface)",borderRadius:8,padding:20,border:isCurrent?"2px solid var(--accent)":"1px solid var(--border)",boxShadow:"var(--shadow-sm)"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                  <span style={{fontSize:15,fontWeight:600,color:"#323338"}}>{month}</span>
-                  {isCurrent && <span style={{fontSize:10,fontWeight:600,color:"#0073ea",background:"#cce5ff",padding:"2px 8px",borderRadius:10}}>CURRENT</span>}
+                  <span style={{fontSize:15,fontWeight:600,color:"var(--text-primary)"}}>{month}</span>
+                  {isCurrent && <span style={{fontSize:10,fontWeight:600,color:"var(--accent)",background:"var(--active-tab-bg)",padding:"2px 8px",borderRadius:10}}>CURRENT</span>}
                 </div>
-                <div style={{fontSize:28,fontWeight:700,color:"#323338"}}>{mTasks.length}</div>
-                <div style={{fontSize:12,color:"#676879",marginTop:4}}>{done} completed</div>
-                <div style={{marginTop:10,height:4,background:"#e6e9ef",borderRadius:2,overflow:"hidden"}}>
+                <div style={{fontSize:28,fontWeight:700,color:"var(--text-primary)"}}>{mTasks.length}</div>
+                <div style={{fontSize:12,color:"var(--text-secondary)",marginTop:4}}>{done} completed</div>
+                <div style={{marginTop:10,height:4,background:"var(--bg-muted)",borderRadius:2,overflow:"hidden"}}>
                   <div style={{height:"100%",background:"#00c875",width:`${pct}%`,borderRadius:2,transition:"width 0.3s"}}></div>
                 </div>
-                <div style={{fontSize:11,color:"#676879",marginTop:4,textAlign:"right"}}>{pct}%</div>
+                <div style={{fontSize:11,color:"var(--text-secondary)",marginTop:4,textAlign:"right"}}>{pct}%</div>
               </div>
             );
           })}
@@ -588,7 +707,7 @@
     }
 
     // ===================== DASHBOARD VIEW =====================
-    function DashboardView({ tasks }) {
+    function DashboardView({ tasks, theme }) {
       const now = new Date();
       const total = tasks.length;
       const inProg = tasks.filter(t => t.status === "in_progress").length;
@@ -611,6 +730,8 @@
         name: STATUS_MAP[s].label, value: tasks.filter(t => t.status === s).length, color: STATUS_MAP[s].color
       })), [tasks]);
 
+      const chartTickStyle = { fontSize: 12, fill: theme === "dark" ? "#9699a8" : "#676879" };
+
       return (
         <div>
           {/* Metric cards */}
@@ -624,8 +745,8 @@
               <div key={i} className="metric-card">
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                   <div>
-                    <div style={{fontSize:13,color:"#676879",marginBottom:8}}>{m.label}</div>
-                    <div style={{fontSize:32,fontWeight:700,color:"#323338"}}>{m.value}</div>
+                    <div style={{fontSize:13,color:"var(--text-secondary)",marginBottom:8}}>{m.label}</div>
+                    <div style={{fontSize:32,fontWeight:700,color:"var(--text-primary)"}}>{m.value}</div>
                   </div>
                   <div style={{width:40,height:40,borderRadius:8,background:m.color+"15",display:"flex",alignItems:"center",justifyContent:"center"}}>
                     <m.icon size={20} color={m.color} />
@@ -638,15 +759,15 @@
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:24}}>
             {/* Domain Progress */}
             <div className="metric-card">
-              <h3 style={{fontSize:15,fontWeight:600,color:"#323338",marginBottom:16}}>Domain Progress</h3>
+              <h3 style={{fontSize:15,fontWeight:600,color:"var(--text-primary)",marginBottom:16}}>Domain Progress</h3>
               <div style={{display:"flex",flexDirection:"column",gap:12}}>
                 {domainProg.map(d => (
                   <div key={d.id}>
                     <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                      <span style={{fontSize:13,fontWeight:500,color:"#323338"}}>{d.name}</span>
-                      <span style={{fontSize:12,color:"#676879"}}>{d.done}/{d.total}</span>
+                      <span style={{fontSize:13,fontWeight:500,color:"var(--text-primary)"}}>{d.name}</span>
+                      <span style={{fontSize:12,color:"var(--text-secondary)"}}>{d.done}/{d.total}</span>
                     </div>
-                    <div style={{height:6,background:"#e6e9ef",borderRadius:3,overflow:"hidden"}}>
+                    <div style={{height:6,background:"var(--bg-muted)",borderRadius:3,overflow:"hidden"}}>
                       <div style={{height:"100%",background:d.color,width:`${d.pct}%`,borderRadius:3,transition:"width 0.3s"}}></div>
                     </div>
                   </div>
@@ -656,12 +777,12 @@
 
             {/* Monthly Volume Chart */}
             <div className="metric-card">
-              <h3 style={{fontSize:15,fontWeight:600,color:"#323338",marginBottom:16}}>Monthly Task Volume</h3>
+              <h3 style={{fontSize:15,fontWeight:600,color:"var(--text-primary)",marginBottom:16}}>Monthly Task Volume</h3>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={monthlyData}>
-                  <XAxis dataKey="name" tick={{fontSize:12}} />
-                  <YAxis tick={{fontSize:12}} />
-                  <Tooltip />
+                  <XAxis dataKey="name" tick={chartTickStyle} />
+                  <YAxis tick={chartTickStyle} />
+                  <Tooltip contentStyle={{background:"var(--dropdown-bg)",border:"1px solid var(--border)",borderRadius:6,color:"var(--text-primary)"}} />
                   <Bar dataKey="tasks" fill="#0073ea" radius={[3,3,0,0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -671,33 +792,33 @@
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
             {/* Status Distribution */}
             <div className="metric-card">
-              <h3 style={{fontSize:15,fontWeight:600,color:"#323338",marginBottom:16}}>Status Distribution</h3>
+              <h3 style={{fontSize:15,fontWeight:600,color:"var(--text-primary)",marginBottom:16}}>Status Distribution</h3>
               <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
                   <Pie data={statusData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2}>
                     {statusData.map((e,i) => <Cell key={i} fill={e.color} />)}
                   </Pie>
-                  <Tooltip />
-                  <Legend iconType="circle" wrapperStyle={{fontSize:12}} />
+                  <Tooltip contentStyle={{background:"var(--dropdown-bg)",border:"1px solid var(--border)",borderRadius:6,color:"var(--text-primary)"}} />
+                  <Legend iconType="circle" wrapperStyle={{fontSize:12,color:"var(--text-secondary)"}} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
 
             {/* Upcoming Deadlines */}
             <div className="metric-card">
-              <h3 style={{fontSize:15,fontWeight:600,color:"#323338",marginBottom:16}}>Upcoming Deadlines</h3>
+              <h3 style={{fontSize:15,fontWeight:600,color:"var(--text-primary)",marginBottom:16}}>Upcoming Deadlines</h3>
               <div style={{display:"flex",flexDirection:"column",gap:8}}>
                 {upcoming.map(t => (
-                  <div key={t.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",background:"#f6f7fb",borderRadius:6}}>
+                  <div key={t.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",background:"var(--bg-surface-secondary)",borderRadius:6}}>
                     <span className="owner-avatar" style={{background:ownerColor(t.owner),width:24,height:24,fontSize:9}}>{getInitials(t.owner)}</span>
                     <div style={{flex:1,overflow:"hidden"}}>
-                      <div style={{fontSize:13,fontWeight:500,color:"#323338",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.title}</div>
-                      <div style={{fontSize:11,color:"#676879"}}>{t.boardName}</div>
+                      <div style={{fontSize:13,fontWeight:500,color:"var(--text-primary)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.title}</div>
+                      <div style={{fontSize:11,color:"var(--text-secondary)"}}>{t.boardName}</div>
                     </div>
-                    <span style={{fontSize:12,color:"#676879",whiteSpace:"nowrap"}}>{fmtDate(t.dueDate)}</span>
+                    <span style={{fontSize:12,color:"var(--text-secondary)",whiteSpace:"nowrap"}}>{fmtDate(t.dueDate)}</span>
                   </div>
                 ))}
-                {upcoming.length === 0 && <div style={{fontSize:13,color:"#676879",textAlign:"center",padding:20}}>No upcoming deadlines</div>}
+                {upcoming.length === 0 && <div style={{fontSize:13,color:"var(--text-secondary)",textAlign:"center",padding:20}}>No upcoming deadlines</div>}
               </div>
             </div>
           </div>
@@ -746,17 +867,17 @@
       return (
         <React.Fragment>
           {/* Overlay */}
-          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.3)",zIndex:90}} onClick={onClose} className="fade-enter" />
+          <div style={{position:"fixed",inset:0,background:"var(--detail-overlay)",zIndex:90}} onClick={onClose} className="fade-enter" />
           {/* Panel */}
           <div className="detail-panel">
             {/* Header */}
-            <div style={{padding:"16px 20px",borderBottom:"1px solid #e6e9ef",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
-              <div style={{fontSize:12,color:"#676879"}}>{task.boardName}</div>
+            <div style={{padding:"16px 20px",borderBottom:"1px solid var(--border)",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
+              <div style={{fontSize:12,color:"var(--text-secondary)"}}>{task.boardName}</div>
               <div style={{display:"flex",gap:8}}>
-                <button onClick={() => onDelete(task.id)} style={{background:"none",border:"none",cursor:"pointer",padding:4,borderRadius:4,color:"#676879"}} title="Delete">
+                <button onClick={() => onDelete(task.id)} style={{background:"none",border:"none",cursor:"pointer",padding:4,borderRadius:4,color:"var(--text-secondary)"}} title="Delete">
                   <IcoTrash size={16} />
                 </button>
-                <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",padding:4,borderRadius:4,color:"#676879"}}>
+                <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",padding:4,borderRadius:4,color:"var(--text-secondary)"}}>
                   <IcoX size={18} />
                 </button>
               </div>
@@ -764,19 +885,19 @@
 
             {/* Title */}
             <div style={{padding:"16px 20px 0 20px",flexShrink:0}}>
-              <h2 style={{fontSize:20,fontWeight:600,color:"#323338",margin:0,lineHeight:1.4}}>{task.title}</h2>
+              <h2 style={{fontSize:20,fontWeight:600,color:"var(--text-primary)",margin:0,lineHeight:1.4}}>{task.title}</h2>
             </div>
 
             {/* Properties grid */}
             <div style={{padding:"16px 20px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,flexShrink:0}}>
               <div>
-                <label style={{fontSize:11,fontWeight:600,color:"#676879",textTransform:"uppercase",letterSpacing:"0.5px",display:"block",marginBottom:4}}>Status</label>
+                <label style={{fontSize:11,fontWeight:600,color:"var(--text-secondary)",textTransform:"uppercase",letterSpacing:"0.5px",display:"block",marginBottom:4}}>Status</label>
                 <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
                   {STATUS_ORDER.map(s => (
                     <button key={s} onClick={() => onUpdate(task.id, {status:s})}
                       style={{padding:"4px 10px",borderRadius:4,fontSize:12,fontWeight:500,border:"none",cursor:"pointer",
-                        background: task.status === s ? STATUS_MAP[s].color : "#e6e9ef",
-                        color: task.status === s ? "#fff" : "#676879",
+                        background: task.status === s ? STATUS_MAP[s].color : "var(--bg-muted)",
+                        color: task.status === s ? "#fff" : "var(--text-secondary)",
                       }}>
                       {STATUS_MAP[s].label}
                     </button>
@@ -784,13 +905,13 @@
                 </div>
               </div>
               <div>
-                <label style={{fontSize:11,fontWeight:600,color:"#676879",textTransform:"uppercase",letterSpacing:"0.5px",display:"block",marginBottom:4}}>Priority</label>
+                <label style={{fontSize:11,fontWeight:600,color:"var(--text-secondary)",textTransform:"uppercase",letterSpacing:"0.5px",display:"block",marginBottom:4}}>Priority</label>
                 <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
                   {["critical","high","medium","low"].map(p => (
                     <button key={p} onClick={() => onUpdate(task.id, {priority:p})}
                       style={{padding:"4px 10px",borderRadius:4,fontSize:12,fontWeight:500,border:"none",cursor:"pointer",
-                        background: task.priority === p ? PRIORITY_MAP[p].color : "#e6e9ef",
-                        color: task.priority === p ? "#fff" : "#676879",
+                        background: task.priority === p ? PRIORITY_MAP[p].color : "var(--bg-muted)",
+                        color: task.priority === p ? "#fff" : "var(--text-secondary)",
                       }}>
                       {PRIORITY_MAP[p].label}
                     </button>
@@ -798,29 +919,29 @@
                 </div>
               </div>
               <div>
-                <label style={{fontSize:11,fontWeight:600,color:"#676879",textTransform:"uppercase",letterSpacing:"0.5px",display:"block",marginBottom:4}}>Owner</label>
+                <label style={{fontSize:11,fontWeight:600,color:"var(--text-secondary)",textTransform:"uppercase",letterSpacing:"0.5px",display:"block",marginBottom:4}}>Owner</label>
                 <select value={task.owner} onChange={e => onUpdate(task.id, {owner:e.target.value})}
-                  style={{padding:"6px 8px",border:"1px solid #c3c6d4",borderRadius:4,fontSize:13,fontFamily:"inherit",width:"100%",background:"#fff",cursor:"pointer"}}>
+                  style={{padding:"6px 8px",border:"1px solid var(--input-border)",borderRadius:4,fontSize:13,fontFamily:"inherit",width:"100%",background:"var(--input-bg)",color:"var(--text-primary)",cursor:"pointer"}}>
                   {OWNERS.map(o => <option key={o} value={o}>{o}</option>)}
                 </select>
               </div>
               <div>
-                <label style={{fontSize:11,fontWeight:600,color:"#676879",textTransform:"uppercase",letterSpacing:"0.5px",display:"block",marginBottom:4}}>Due Date</label>
+                <label style={{fontSize:11,fontWeight:600,color:"var(--text-secondary)",textTransform:"uppercase",letterSpacing:"0.5px",display:"block",marginBottom:4}}>Due Date</label>
                 <input type="date" value={task.dueDate?.split("T")[0] || ""} onChange={e => onUpdate(task.id, {dueDate:e.target.value})}
-                  style={{padding:"6px 8px",border:"1px solid #c3c6d4",borderRadius:4,fontSize:13,fontFamily:"inherit",width:"100%"}} />
+                  style={{padding:"6px 8px",border:"1px solid var(--input-border)",borderRadius:4,fontSize:13,fontFamily:"inherit",width:"100%",background:"var(--input-bg)",color:"var(--text-primary)"}} />
               </div>
             </div>
 
             {/* Tabs */}
-            <div style={{display:"flex",gap:0,borderBottom:"1px solid #e6e9ef",padding:"0 20px",flexShrink:0}}>
+            <div style={{display:"flex",gap:0,borderBottom:"1px solid var(--border)",padding:"0 20px",flexShrink:0}}>
               {[
                 { id: "updates", label: "Updates", icon: IcoMsg },
                 { id: "activity", label: "Activity Log", icon: IcoActivity },
               ].map(tab => (
                 <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                   style={{padding:"10px 16px",fontSize:13,fontWeight:500,cursor:"pointer",border:"none",background:"none",
-                    borderBottom: activeTab === tab.id ? "2px solid #0073ea" : "2px solid transparent",
-                    color: activeTab === tab.id ? "#0073ea" : "#676879",
+                    borderBottom: activeTab === tab.id ? "2px solid var(--accent)" : "2px solid transparent",
+                    color: activeTab === tab.id ? "var(--accent)" : "var(--text-secondary)",
                     display:"flex",alignItems:"center",gap:6,
                   }}>
                   <tab.icon size={14} /> {tab.label}
@@ -834,13 +955,13 @@
                 <div>
                   {/* Comment input */}
                   <div style={{marginBottom:16}}>
-                    <div style={{border:"1px solid #c3c6d4",borderRadius:8,overflow:"hidden"}}>
+                    <div style={{border:"1px solid var(--border-secondary)",borderRadius:8,overflow:"hidden"}}>
                       <textarea value={commentText} onChange={e => setCommentText(e.target.value)}
                         placeholder="Write an update..."
-                        style={{width:"100%",padding:"10px 12px",border:"none",outline:"none",resize:"none",fontSize:13,fontFamily:"inherit",minHeight:60}} />
-                      <div style={{display:"flex",justifyContent:"flex-end",padding:"6px 8px",borderTop:"1px solid #e6e9ef",background:"#f6f7fb"}}>
+                        style={{width:"100%",padding:"10px 12px",border:"none",outline:"none",resize:"none",fontSize:13,fontFamily:"inherit",minHeight:60,background:"var(--input-bg)",color:"var(--text-primary)"}} />
+                      <div style={{display:"flex",justifyContent:"flex-end",padding:"6px 8px",borderTop:"1px solid var(--border)",background:"var(--bg-surface-secondary)"}}>
                         <button onClick={submitComment} disabled={!commentText.trim()}
-                          style={{padding:"5px 14px",background:commentText.trim()?"#0073ea":"#c3c6d4",color:"#fff",border:"none",borderRadius:4,fontSize:12,fontWeight:500,cursor:commentText.trim()?"pointer":"default",display:"flex",alignItems:"center",gap:4}}>
+                          style={{padding:"5px 14px",background:commentText.trim()?"var(--accent)":"var(--border-secondary)",color:"#fff",border:"none",borderRadius:4,fontSize:12,fontWeight:500,cursor:commentText.trim()?"pointer":"default",display:"flex",alignItems:"center",gap:4}}>
                           <IcoSend size={12} /> Update
                         </button>
                       </div>
@@ -848,17 +969,17 @@
                   </div>
 
                   {/* Comments list */}
-                  {comments.length === 0 && <div style={{textAlign:"center",padding:20,color:"#676879",fontSize:13}}>No updates yet. Be the first to post!</div>}
+                  {comments.length === 0 && <div style={{textAlign:"center",padding:20,color:"var(--text-secondary)",fontSize:13}}>No updates yet. Be the first to post!</div>}
                   {comments.map((c, i) => (
-                    <div key={i} style={{marginBottom:12,padding:12,background:"#f6f7fb",borderRadius:8}}>
+                    <div key={i} style={{marginBottom:12,padding:12,background:"var(--comment-bg)",borderRadius:8}}>
                       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
-                        <span className="owner-avatar" style={{background:"#0073ea",width:28,height:28,fontSize:11}}>{getInitials(c.author || "User")}</span>
+                        <span className="owner-avatar" style={{background:"var(--accent)",width:28,height:28,fontSize:11}}>{getInitials(c.author || "User")}</span>
                         <div>
-                          <span style={{fontSize:13,fontWeight:600,color:"#323338"}}>{c.author || "User"}</span>
-                          <span style={{fontSize:11,color:"#676879",marginLeft:8}}>{fmtDateFull(c.timestamp)} {fmtTime(c.timestamp)}</span>
+                          <span style={{fontSize:13,fontWeight:600,color:"var(--text-primary)"}}>{c.author || "User"}</span>
+                          <span style={{fontSize:11,color:"var(--text-secondary)",marginLeft:8}}>{fmtDateFull(c.timestamp)} {fmtTime(c.timestamp)}</span>
                         </div>
                       </div>
-                      <div style={{fontSize:13,color:"#323338",lineHeight:1.5,paddingLeft:36}}>{c.text}</div>
+                      <div style={{fontSize:13,color:"var(--text-primary)",lineHeight:1.5,paddingLeft:36}}>{c.text}</div>
                     </div>
                   ))}
                 </div>
@@ -866,7 +987,7 @@
 
               {activeTab === "activity" && (
                 <div>
-                  {changes.length === 0 && <div style={{textAlign:"center",padding:20,color:"#676879",fontSize:13}}>No activity logged yet</div>}
+                  {changes.length === 0 && <div style={{textAlign:"center",padding:20,color:"var(--text-secondary)",fontSize:13}}>No activity logged yet</div>}
                   {changes.map((a, i) => {
                     const fieldLabel = { status: "Status", owner: "Owner", priority: "Priority", dueDate: "Due Date", title: "Title" }[a.field] || a.field;
                     const oldDisplay = a.field === "status" ? (STATUS_MAP[a.oldValue]?.label || a.oldValue) :
@@ -874,13 +995,13 @@
                     const newDisplay = a.field === "status" ? (STATUS_MAP[a.newValue]?.label || a.newValue) :
                                        a.field === "priority" ? (PRIORITY_MAP[a.newValue]?.label || a.newValue) : a.newValue;
                     return (
-                      <div key={i} style={{display:"flex",gap:12,padding:"10px 0",borderBottom:"1px solid #e6e9ef"}}>
-                        <div style={{width:6,borderRadius:3,background:"#c3c6d4",flexShrink:0}}></div>
+                      <div key={i} style={{display:"flex",gap:12,padding:"10px 0",borderBottom:"1px solid var(--border)"}}>
+                        <div style={{width:6,borderRadius:3,background:"var(--border-secondary)",flexShrink:0}}></div>
                         <div>
-                          <div style={{fontSize:13,color:"#323338"}}>
-                            <strong>{fieldLabel}</strong> changed from <span style={{textDecoration:"line-through",color:"#676879"}}>{oldDisplay}</span> to <strong>{newDisplay}</strong>
+                          <div style={{fontSize:13,color:"var(--text-primary)"}}>
+                            <strong>{fieldLabel}</strong> changed from <span style={{textDecoration:"line-through",color:"var(--text-secondary)"}}>{oldDisplay}</span> to <strong>{newDisplay}</strong>
                           </div>
-                          <div style={{fontSize:11,color:"#676879",marginTop:2}}>{fmtDateFull(a.timestamp)} {fmtTime(a.timestamp)}</div>
+                          <div style={{fontSize:11,color:"var(--text-secondary)",marginTop:2}}>{fmtDateFull(a.timestamp)} {fmtTime(a.timestamp)}</div>
                         </div>
                       </div>
                     );
@@ -908,51 +1029,51 @@
 
       return (
         <React.Fragment>
-          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.35)",zIndex:100}} onClick={onClose} className="fade-enter" />
-          <div style={{position:"fixed",top:"50%",left:"50%",transform:"translate(-50%,-50%)",background:"#fff",borderRadius:12,padding:24,width:440,zIndex:110,boxShadow:"0 12px 40px rgba(0,0,0,0.2)"}} className="fade-enter" onClick={e => e.stopPropagation()}>
+          <div style={{position:"fixed",inset:0,background:"var(--overlay-bg)",zIndex:100}} onClick={onClose} className="fade-enter" />
+          <div style={{position:"fixed",top:"50%",left:"50%",transform:"translate(-50%,-50%)",background:"var(--modal-bg)",borderRadius:12,padding:24,width:440,zIndex:110,boxShadow:"var(--shadow-xl)"}} className="fade-enter" onClick={e => e.stopPropagation()}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-              <h3 style={{fontSize:18,fontWeight:600,color:"#323338",margin:0}}>New Task</h3>
-              <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",padding:4}}><IcoX size={18} color="#676879" /></button>
+              <h3 style={{fontSize:18,fontWeight:600,color:"var(--text-primary)",margin:0}}>New Task</h3>
+              <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",padding:4}}><IcoX size={18} color="var(--text-secondary)" /></button>
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:14}}>
               <div>
-                <label style={{fontSize:12,fontWeight:600,color:"#676879",display:"block",marginBottom:4}}>Task Title *</label>
+                <label style={{fontSize:12,fontWeight:600,color:"var(--text-secondary)",display:"block",marginBottom:4}}>Task Title *</label>
                 <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="What needs to be done?"
-                  autoFocus style={{width:"100%",padding:"8px 12px",border:"1px solid #c3c6d4",borderRadius:6,fontSize:14,fontFamily:"inherit",outline:"none"}} />
+                  autoFocus style={{width:"100%",padding:"8px 12px",border:"1px solid var(--input-border)",borderRadius:6,fontSize:14,fontFamily:"inherit",outline:"none",background:"var(--input-bg)",color:"var(--text-primary)"}} />
               </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
                 <div>
-                  <label style={{fontSize:12,fontWeight:600,color:"#676879",display:"block",marginBottom:4}}>Owner</label>
-                  <select value={owner} onChange={e => setOwner(e.target.value)} style={{width:"100%",padding:"8px",border:"1px solid #c3c6d4",borderRadius:6,fontSize:13,fontFamily:"inherit"}}>
+                  <label style={{fontSize:12,fontWeight:600,color:"var(--text-secondary)",display:"block",marginBottom:4}}>Owner</label>
+                  <select value={owner} onChange={e => setOwner(e.target.value)} style={{width:"100%",padding:"8px",border:"1px solid var(--input-border)",borderRadius:6,fontSize:13,fontFamily:"inherit",background:"var(--input-bg)",color:"var(--text-primary)"}}>
                     {OWNERS.map(o => <option key={o} value={o}>{o}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={{fontSize:12,fontWeight:600,color:"#676879",display:"block",marginBottom:4}}>Priority</label>
-                  <select value={priority} onChange={e => setPriority(e.target.value)} style={{width:"100%",padding:"8px",border:"1px solid #c3c6d4",borderRadius:6,fontSize:13,fontFamily:"inherit"}}>
+                  <label style={{fontSize:12,fontWeight:600,color:"var(--text-secondary)",display:"block",marginBottom:4}}>Priority</label>
+                  <select value={priority} onChange={e => setPriority(e.target.value)} style={{width:"100%",padding:"8px",border:"1px solid var(--input-border)",borderRadius:6,fontSize:13,fontFamily:"inherit",background:"var(--input-bg)",color:"var(--text-primary)"}}>
                     {["critical","high","medium","low"].map(p => <option key={p} value={p}>{PRIORITY_MAP[p].label}</option>)}
                   </select>
                 </div>
               </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
                 <div>
-                  <label style={{fontSize:12,fontWeight:600,color:"#676879",display:"block",marginBottom:4}}>Due Date</label>
-                  <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} style={{width:"100%",padding:"8px",border:"1px solid #c3c6d4",borderRadius:6,fontSize:13,fontFamily:"inherit"}} />
+                  <label style={{fontSize:12,fontWeight:600,color:"var(--text-secondary)",display:"block",marginBottom:4}}>Due Date</label>
+                  <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} style={{width:"100%",padding:"8px",border:"1px solid var(--input-border)",borderRadius:6,fontSize:13,fontFamily:"inherit",background:"var(--input-bg)",color:"var(--text-primary)"}} />
                 </div>
                 <div>
-                  <label style={{fontSize:12,fontWeight:600,color:"#676879",display:"block",marginBottom:4}}>Month</label>
-                  <select value={month} onChange={e => setMonth(e.target.value)} style={{width:"100%",padding:"8px",border:"1px solid #c3c6d4",borderRadius:6,fontSize:13,fontFamily:"inherit"}}>
+                  <label style={{fontSize:12,fontWeight:600,color:"var(--text-secondary)",display:"block",marginBottom:4}}>Month</label>
+                  <select value={month} onChange={e => setMonth(e.target.value)} style={{width:"100%",padding:"8px",border:"1px solid var(--input-border)",borderRadius:6,fontSize:13,fontFamily:"inherit",background:"var(--input-bg)",color:"var(--text-primary)"}}>
                     {MONTHS.map((m,i) => <option key={i} value={i+1}>{m}</option>)}
                   </select>
                 </div>
               </div>
               <div style={{display:"flex",gap:10,marginTop:6}}>
                 <button onClick={handleCreate}
-                  style={{flex:1,padding:"10px",background:"#0073ea",color:"#fff",border:"none",borderRadius:6,fontSize:14,fontWeight:600,cursor:"pointer"}}>
+                  style={{flex:1,padding:"10px",background:"var(--accent)",color:"#fff",border:"none",borderRadius:6,fontSize:14,fontWeight:600,cursor:"pointer"}}>
                   Add Task
                 </button>
                 <button onClick={onClose}
-                  style={{flex:1,padding:"10px",background:"#e6e9ef",color:"#323338",border:"none",borderRadius:6,fontSize:14,fontWeight:500,cursor:"pointer"}}>
+                  style={{flex:1,padding:"10px",background:"var(--bg-muted)",color:"var(--text-primary)",border:"none",borderRadius:6,fontSize:14,fontWeight:500,cursor:"pointer"}}>
                   Cancel
                 </button>
               </div>
@@ -964,13 +1085,27 @@
 
     // ===================== MAIN APP =====================
     function App() {
+      // Theme state
+      const [theme, setTheme] = useState(() => {
+        try { return localStorage.getItem("comphub-theme") || "light"; } catch { return "light"; }
+      });
+
+      useEffect(() => {
+        document.documentElement.setAttribute("data-theme", theme);
+        try { localStorage.setItem("comphub-theme", theme); } catch {}
+      }, [theme]);
+
+      const toggleTheme = useCallback(() => {
+        setTheme(prev => prev === "light" ? "dark" : "light");
+      }, []);
+
       // State
       const [tasks, setTasks] = useState([]);
       const [loading, setLoading] = useState(true);
-      const [currentBoard, setCurrentBoard] = useState(null); // null = "All Tasks" / Dashboard
-      const [currentView, setCurrentView] = useState("table"); // table | kanban | calendar | dashboard
+      const [currentBoard, setCurrentBoard] = useState(null);
+      const [currentView, setCurrentView] = useState("table");
       const [selectedTask, setSelectedTask] = useState(null);
-      const [addTaskModal, setAddTaskModal] = useState(null); // { boardId, boardName, domainId, domainName }
+      const [addTaskModal, setAddTaskModal] = useState(null);
       const [toast, setToast] = useState(null);
       const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
       const [expandedDomains, setExpandedDomains] = useState({"base-pay": true, "variable-pay": true, "exec-comp": true});
@@ -992,7 +1127,6 @@
 
       // Mutations
       const updateTask = useCallback(async (id, updates) => {
-        // Optimistic update
         setTasks(prev => prev.map(t => t.id === id ? {...t, ...updates, updatedAt: new Date().toISOString()} : t));
         if (selectedTask && selectedTask.id === id) {
           setSelectedTask(prev => prev ? {...prev, ...updates} : prev);
@@ -1040,7 +1174,6 @@
       const boardTaskCount = (boardId) => tasks.filter(t => t.boardId === boardId).length;
       const boardDoneCount = (boardId) => tasks.filter(t => t.boardId === boardId && t.status === "complete").length;
 
-      // Filtered boards for sidebar search
       const filteredBoards = useMemo(() => {
         if (!sidebarSearch) return BOARDS;
         return BOARDS.filter(b => b.name.toLowerCase().includes(sidebarSearch.toLowerCase()));
@@ -1054,7 +1187,6 @@
         if (boardMeta) {
           setAddTaskModal({ boardId: boardMeta.id, boardName: boardMeta.name, domainId: boardMeta.domain, domainName: DOMAIN_META[boardMeta.domain].name });
         } else {
-          // Default to first board
           const b = BOARDS[0];
           setAddTaskModal({ boardId: b.id, boardName: b.name, domainId: b.domain, domainName: DOMAIN_META[b.domain].name });
         }
@@ -1062,11 +1194,11 @@
 
       if (loading) {
         return (
-          <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",background:"#f6f7fb"}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",background:"var(--bg-primary)"}}>
             <div style={{textAlign:"center"}}>
-              <div style={{width:40,height:40,border:"3px solid #e6e9ef",borderTopColor:"#0073ea",borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto 16px"}}></div>
+              <div style={{width:40,height:40,border:"3px solid var(--border)",borderTopColor:"var(--accent)",borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto 16px"}}></div>
               <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-              <p style={{color:"#676879",fontSize:14}}>Loading CompHub...</p>
+              <p style={{color:"var(--text-secondary)",fontSize:14}}>Loading CompHub...</p>
             </div>
           </div>
         );
@@ -1075,12 +1207,12 @@
       return (
         <div style={{display:"flex",height:"100vh",overflow:"hidden"}}>
           {/* ===== SIDEBAR ===== */}
-          <div style={{width: sidebarCollapsed ? 48 : 260, background:"#292f4c", color:"#fff", display:"flex", flexDirection:"column", transition:"width 0.2s", flexShrink:0, overflow:"hidden"}}>
+          <div style={{width: sidebarCollapsed ? 48 : 260, background:"var(--sidebar-bg)", color:"#fff", display:"flex", flexDirection:"column", transition:"width 0.2s", flexShrink:0, overflow:"hidden"}}>
             {/* Logo */}
-            <div style={{padding: sidebarCollapsed ? "16px 8px" : "16px 16px", borderBottom:"1px solid rgba(255,255,255,0.08)", display:"flex", alignItems:"center", gap:10, minHeight:56}}>
+            <div style={{padding: sidebarCollapsed ? "16px 8px" : "16px 16px", borderBottom:"1px solid var(--sidebar-border)", display:"flex", alignItems:"center", gap:10, minHeight:56}}>
               {!sidebarCollapsed && (
                 <React.Fragment>
-                  <div style={{width:32,height:32,borderRadius:8,background:"#0073ea",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:14}}>C</div>
+                  <div style={{width:32,height:32,borderRadius:8,background:"var(--accent)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:14}}>C</div>
                   <div>
                     <div style={{fontSize:15,fontWeight:700}}>CompHub</div>
                     <div style={{fontSize:10,color:"#9699a8"}}>Comp Ops Center</div>
@@ -1099,7 +1231,7 @@
                 <div style={{padding:"12px 12px 8px 12px"}}>
                   <div style={{position:"relative"}}>
                     <input type="text" placeholder="Search boards..." value={sidebarSearch} onChange={e => setSidebarSearch(e.target.value)}
-                      style={{width:"100%",padding:"6px 10px 6px 30px",background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:4,fontSize:12,color:"#fff",outline:"none",fontFamily:"inherit"}} />
+                      style={{width:"100%",padding:"6px 10px 6px 30px",background:"var(--sidebar-input-bg)",border:"1px solid var(--sidebar-input-border)",borderRadius:4,fontSize:12,color:"#fff",outline:"none",fontFamily:"inherit"}} />
                     <IcoSearch size={13} color="#9699a8" className="" />
                     <div style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}}></div>
                   </div>
@@ -1149,9 +1281,9 @@
                 </div>
 
                 {/* Bottom actions */}
-                <div style={{padding:12,borderTop:"1px solid rgba(255,255,255,0.08)"}}>
+                <div style={{padding:12,borderTop:"1px solid var(--sidebar-border)"}}>
                   <button onClick={resetAll}
-                    style={{width:"100%",padding:"8px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:4,color:"#9699a8",fontSize:12,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                    style={{width:"100%",padding:"8px",background:"rgba(255,255,255,0.06)",border:"1px solid var(--sidebar-input-border)",borderRadius:4,color:"#9699a8",fontSize:12,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                     <IcoRefresh size={13} /> Reset to Defaults
                   </button>
                 </div>
@@ -1162,16 +1294,16 @@
           {/* ===== MAIN AREA ===== */}
           <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
             {/* Top bar */}
-            <div style={{background:"#fff",borderBottom:"1px solid #e6e9ef",padding:"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+            <div style={{background:"var(--bg-surface)",borderBottom:"1px solid var(--border)",padding:"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
               <div style={{display:"flex",alignItems:"center",gap:12}}>
                 {boardMeta && (
                   <span style={{width:10,height:10,borderRadius:3,background:domainMeta?.color || "#888"}}></span>
                 )}
-                <h1 style={{fontSize:20,fontWeight:700,color:"#323338",margin:0}}>
+                <h1 style={{fontSize:20,fontWeight:700,color:"var(--text-primary)",margin:0}}>
                   {boardMeta ? boardMeta.name : (currentView === "dashboard" ? "Dashboard" : "All Tasks")}
                 </h1>
                 {boardMeta && (
-                  <span style={{fontSize:12,color:"#676879",background:"#e6e9ef",padding:"2px 8px",borderRadius:4}}>
+                  <span style={{fontSize:12,color:"var(--text-secondary)",background:"var(--bg-muted)",padding:"2px 8px",borderRadius:4}}>
                     {boardTaskCount(boardMeta.id)} tasks
                   </span>
                 )}
@@ -1188,9 +1320,13 @@
                     </button>
                   );
                 })}
-                <div style={{width:1,height:24,background:"#e6e9ef",margin:"0 4px"}}></div>
+                <div style={{width:1,height:24,background:"var(--border)",margin:"0 4px"}}></div>
+                {/* Theme Toggle */}
+                <button className="theme-toggle" onClick={toggleTheme} title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}>
+                  {theme === "light" ? <IcoMoon size={16} /> : <IcoSun size={16} />}
+                </button>
                 <button onClick={handleAddTask}
-                  style={{padding:"7px 16px",background:"#0073ea",color:"#fff",border:"none",borderRadius:4,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:5,fontFamily:"inherit"}}>
+                  style={{padding:"7px 16px",background:"var(--accent)",color:"#fff",border:"none",borderRadius:4,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:5,fontFamily:"inherit"}}>
                   <IcoPlus size={14} color="#fff" /> New Task
                 </button>
               </div>
@@ -1198,19 +1334,19 @@
 
             {/* Board progress bar (for specific boards) */}
             {boardMeta && (
-              <div style={{padding:"0 24px",background:"#fff",paddingBottom:8}}>
+              <div style={{padding:"0 24px",background:"var(--bg-surface)",paddingBottom:8}}>
                 <div style={{display:"flex",alignItems:"center",gap:12}}>
-                  <div style={{flex:1,height:4,background:"#e6e9ef",borderRadius:2,overflow:"hidden"}}>
-                    <div style={{height:"100%",background:domainMeta?.color||"#0073ea",width:`${boardTaskCount(boardMeta.id) > 0 ? (boardDoneCount(boardMeta.id)/boardTaskCount(boardMeta.id))*100 : 0}%`,borderRadius:2,transition:"width 0.3s"}}></div>
+                  <div style={{flex:1,height:4,background:"var(--bg-muted)",borderRadius:2,overflow:"hidden"}}>
+                    <div style={{height:"100%",background:domainMeta?.color||"var(--accent)",width:`${boardTaskCount(boardMeta.id) > 0 ? (boardDoneCount(boardMeta.id)/boardTaskCount(boardMeta.id))*100 : 0}%`,borderRadius:2,transition:"width 0.3s"}}></div>
                   </div>
-                  <span style={{fontSize:12,color:"#676879",flexShrink:0}}>{boardDoneCount(boardMeta.id)}/{boardTaskCount(boardMeta.id)} done</span>
+                  <span style={{fontSize:12,color:"var(--text-secondary)",flexShrink:0}}>{boardDoneCount(boardMeta.id)}/{boardTaskCount(boardMeta.id)} done</span>
                 </div>
               </div>
             )}
 
             {/* Content area */}
             <div style={{flex:1,overflow:"auto",padding:24}}>
-              {currentView === "dashboard" && <DashboardView tasks={currentBoard ? tasks.filter(t => t.boardId === currentBoard) : tasks} />}
+              {currentView === "dashboard" && <DashboardView tasks={currentBoard ? tasks.filter(t => t.boardId === currentBoard) : tasks} theme={theme} />}
               {currentView === "table" && (
                 <TableView tasks={tasks} onUpdate={updateTask} onDelete={deleteTask} onSelectTask={handleSelectTask}
                   searchQuery={searchQuery} setSearchQuery={setSearchQuery} filters={filters} setFilters={setFilters}
