@@ -10,733 +10,1226 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/recharts@2.10.3/umd/Recharts.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    html, body, #root { margin: 0; padding: 0; height: 100%; font-family: system-ui, -apple-system, sans-serif; }
-    .toast-enter { animation: slideIn 0.3s ease; }
-    .toast-exit { animation: slideOut 0.3s ease; }
-    @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    @keyframes slideOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-20px); opacity: 0; } }
-    .modal-overlay { background: rgba(0,0,0,0.5); }
-    .sidebar-domain { cursor: pointer; user-select: none; }
-    .task-row:hover { background-color: #f9fafb; }
+    * { box-sizing: border-box; }
+    html, body, #root { margin: 0; padding: 0; height: 100%; font-family: 'Figtree', system-ui, -apple-system, sans-serif; background: #f6f7fb; }
+
+    /* Monday.com style scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #c3c6d4; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #a0a4b8; }
+
+    /* Animations */
+    @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    @keyframes slideOutRight { from { transform: translateX(0); } to { transform: translateX(100%); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes toastIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    .panel-enter { animation: slideInRight 0.25s ease-out; }
+    .fade-enter { animation: fadeIn 0.2s ease; }
+    .dropdown-enter { animation: slideDown 0.15s ease-out; }
+    .toast-anim { animation: toastIn 0.3s ease; }
+
+    /* Monday.com table styles */
+    .monday-table { border-collapse: separate; border-spacing: 0; width: 100%; }
+    .monday-table th { position: sticky; top: 0; z-index: 5; background: #fff; }
+
+    .group-header { cursor: pointer; user-select: none; }
+    .group-header:hover { filter: brightness(0.95); }
+
+    .task-row { border-bottom: 1px solid #e6e9ef; transition: background 0.1s; }
+    .task-row:hover { background: #f5f6ff !important; }
+
+    /* Inline edit cell hover indicator */
+    .cell-editable { cursor: pointer; position: relative; transition: background 0.1s; min-height: 38px; display: flex; align-items: center; }
+    .cell-editable:hover { background: rgba(0,115,234,0.04); }
+
+    /* Status/Priority cells */
+    .status-cell, .priority-cell {
+      display: flex; align-items: center; justify-content: center;
+      padding: 4px 0; font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: filter 0.15s; min-height: 38px;
+      border-right: 1px solid rgba(0,0,0,0.06);
+    }
+    .status-cell:hover, .priority-cell:hover { filter: brightness(0.92); }
+
+    /* Dropdown */
+    .cell-dropdown {
+      position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+      background: #fff; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      z-index: 50; min-width: 160px; padding: 6px;
+      animation: slideDown 0.15s ease-out;
+    }
+    .cell-dropdown-option {
+      padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;
+      display: flex; align-items: center; gap: 8px; transition: background 0.1s;
+    }
+    .cell-dropdown-option:hover { background: #f0f1f5; }
+
+    /* Owner avatar */
+    .owner-avatar {
+      width: 28px; height: 28px; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; font-size: 11px;
+      font-weight: 600; color: #fff; flex-shrink: 0;
+    }
+
+    /* Sidebar */
+    .sidebar-board-item {
+      padding: 6px 12px 6px 32px; border-radius: 4px; cursor: pointer;
+      font-size: 13px; color: #c3c6d4; transition: all 0.1s;
+      display: flex; align-items: center; gap: 8px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .sidebar-board-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .sidebar-board-item.active { background: rgba(0,115,234,0.25); color: #fff; }
+
+    .sidebar-domain-header {
+      padding: 6px 12px; cursor: pointer; display: flex; align-items: center;
+      gap: 6px; font-size: 13px; font-weight: 600; color: #9699a8;
+      transition: color 0.1s; user-select: none;
+    }
+    .sidebar-domain-header:hover { color: #fff; }
+
+    /* View tabs */
+    .view-tab {
+      padding: 6px 14px; border-radius: 4px; font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: all 0.15s; color: #676879; border: 1px solid transparent;
+    }
+    .view-tab:hover { background: #e6e9ef; }
+    .view-tab.active { background: #cce5ff; color: #0073ea; border-color: #0073ea30; }
+
+    /* Detail panel */
+    .detail-panel {
+      position: fixed; right: 0; top: 0; bottom: 0; width: 480px;
+      background: #fff; box-shadow: -4px 0 24px rgba(0,0,0,0.12); z-index: 100;
+      animation: slideInRight 0.25s ease-out; display: flex; flex-direction: column;
+    }
+
+    /* Kanban card */
+    .kanban-card {
+      background: #fff; border-radius: 8px; padding: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08); cursor: pointer;
+      transition: box-shadow 0.15s, transform 0.15s; border: 1px solid #e6e9ef;
+    }
+    .kanban-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); transform: translateY(-1px); }
+
+    /* Metric card */
+    .metric-card {
+      background: #fff; border-radius: 8px; padding: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06); border: 1px solid #e6e9ef;
+    }
   </style>
 </head>
 <body>
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useMemo, useEffect, useCallback } = React;
+    const { useState, useMemo, useEffect, useCallback, useRef } = React;
     const { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } = window.Recharts;
 
-    // ==================== ICON HELPERS ====================
-    const mkIcon = (pathData) => ({size=24, className="", color, strokeWidth=2} = {}) => (
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
-        fill="none" stroke={color || "currentColor"} strokeWidth={strokeWidth}
-        strokeLinecap="round" strokeLinejoin="round" className={className}
-        style={{display:"inline-block",verticalAlign:"middle"}}
-        dangerouslySetInnerHTML={{__html: pathData}} />
-    );
+    // ===================== CONSTANTS =====================
+    const API = "/api";
 
-    const LayoutDashboard = mkIcon(`<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>`);
-    const DollarSign = mkIcon(`<line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>`);
-    const Target = mkIcon(`<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>`);
-    const Briefcase = mkIcon(`<rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>`);
-    const Globe = mkIcon(`<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>`);
-    const Shield = mkIcon(`<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>`);
-    const Settings = mkIcon(`<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>`);
-    const Search = mkIcon(`<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>`);
-    const ChevronRight = mkIcon(`<path d="m9 18 6-6-6-6"/>`);
-    const ChevronDown = mkIcon(`<path d="m6 9 6 6 6-6"/>`);
-    const Calendar = mkIcon(`<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>`);
-    const List = mkIcon(`<line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/>`);
-    const Clock = mkIcon(`<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>`);
-    const AlertTriangle = mkIcon(`<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>`);
-    const CheckCircle2 = mkIcon(`<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>`);
-    const X = mkIcon(`<path d="M18 6 6 18"/><path d="m6 6 12 12"/>`);
-    const TrendingUp = mkIcon(`<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>`);
-    const Layers = mkIcon(`<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22.54 12.43-1.42-.65-8.28 3.78a2 2 0 0 1-1.66 0l-8.29-3.78-1.42.65a1 1 0 0 0 0 1.82l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22.54 16.43-1.42-.65-8.28 3.78a2 2 0 0 1-1.66 0l-8.29-3.78-1.42.65a1 1 0 0 0 0 1.82l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/>`);
-    const BarChart3 = mkIcon(`<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>`);
-    const Plus = mkIcon(`<path d="M5 12h14"/><path d="M12 5v14"/>`);
-    const Trash2 = mkIcon(`<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>`);
-    const Edit3 = mkIcon(`<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>`);
-    const Save = mkIcon(`<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>`);
-    const RefreshCw = mkIcon(`<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>`);
-    const MessageSquare = mkIcon(`<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>`);
+    const STATUS_MAP = {
+      not_started: { label: "Not Started", color: "#c4c4c4", textColor: "#fff" },
+      in_progress: { label: "In Progress", color: "#fdab3d", textColor: "#fff" },
+      in_review:   { label: "In Review",   color: "#e2445c", textColor: "#fff" },
+      blocked:     { label: "Blocked",     color: "#df2f4a", textColor: "#fff" },
+      complete:    { label: "Done",        color: "#00c875", textColor: "#fff" },
+    };
+    const STATUS_ORDER = ["not_started", "in_progress", "in_review", "blocked", "complete"];
 
-    // ==================== CONSTANTS ====================
-    const STATUSES = [
-      { id: "not_started", label: "Not Started", color: "#94A3B8", bg: "#F1F5F9" },
-      { id: "in_progress", label: "In Progress", color: "#3B82F6", bg: "#EFF6FF" },
-      { id: "in_review", label: "In Review", color: "#F59E0B", bg: "#FFFBEB" },
-      { id: "complete", label: "Complete", color: "#10B981", bg: "#ECFDF5" },
-      { id: "blocked", label: "Blocked", color: "#EF4444", bg: "#FEF2F2" },
-    ];
+    const PRIORITY_MAP = {
+      critical: { label: "Critical", color: "#e2445c", textColor: "#fff" },
+      high:     { label: "High",     color: "#fdab3d", textColor: "#fff" },
+      medium:   { label: "Medium",   color: "#579bfc", textColor: "#fff" },
+      low:      { label: "Low",      color: "#c4c4c4", textColor: "#fff" },
+    };
 
-    const PRIORITIES = [
-      { id: "critical", label: "Critical", color: "#EF4444" },
-      { id: "high", label: "High", color: "#F97316" },
-      { id: "medium", label: "Medium", color: "#EAB308" },
-      { id: "low", label: "Low", color: "#6B7280" },
-    ];
-
-    const OWNERS = ["Director","Manager","Sr Analyst","Analyst","Admin","HRBP","Legal","Finance"];
+    const OWNER_COLORS = {
+      "Director": "#7B68EE", "Manager": "#FF6B6B", "Lead": "#4ECDC4",
+      "Sr Analyst": "#45B7D1", "Analyst": "#96CEB4", "Admin": "#FFEAA7",
+      "Legal": "#DDA0DD", "Finance": "#98D8C8", "HRBP": "#F8B739",
+    };
+    const OWNERS = Object.keys(OWNER_COLORS);
     const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
     const DOMAIN_META = {
-      "base-pay": { name: "Base Pay & Structures", color: "#3B82F6", icon: "dollar" },
-      "variable-pay": { name: "Variable Pay & Incentives", color: "#10B981", icon: "target" },
-      "exec-comp": { name: "Executive Compensation", color: "#8B5CF6", icon: "briefcase" },
-      "global": { name: "Global / International", color: "#14B8A6", icon: "globe" },
-      "compliance": { name: "Compliance & Governance", color: "#F59E0B", icon: "shield" },
-      "operations": { name: "Operations & Administration", color: "#6366F1", icon: "settings" },
+      "base-pay":     { name: "Base Pay & Structures",       color: "#579bfc", icon: "D" },
+      "variable-pay": { name: "Variable Pay & Incentives",   color: "#00c875", icon: "T" },
+      "exec-comp":    { name: "Executive Compensation",      color: "#a25ddc", icon: "B" },
+      "global":       { name: "Global / International",      color: "#66ccff", icon: "G" },
+      "compliance":   { name: "Compliance & Governance",     color: "#fdab3d", icon: "S" },
+      "operations":   { name: "Operations & Administration", color: "#7f5fff", icon: "O" },
     };
 
     const BOARDS = [
-      { id: "salary-structure", name: "Annual Salary Structure Review", domain: "base-pay", cadence: "Annual", desc: "End-to-end review and update of salary ranges, grades, and pay structures to maintain market competitiveness.", taskCount: 8 },
-      { id: "market-pricing", name: "Market Pricing & Benchmarking", domain: "base-pay", cadence: "Annual", desc: "Annual cycle of survey participation, data collection, job matching, and competitive market analysis.", taskCount: 10 },
-      { id: "merit-cycle", name: "Annual Merit Cycle", domain: "base-pay", cadence: "Annual", desc: "Full lifecycle management of the annual merit increase process from planning through post-cycle analysis.", taskCount: 14 },
-      { id: "pay-equity", name: "Pay Equity Analysis", domain: "base-pay", cadence: "Annual", desc: "Statistical analysis of compensation equity across protected classes with remediation planning.", taskCount: 10 },
-      { id: "job-architecture", name: "Job Architecture & Evaluation", domain: "base-pay", cadence: "Annual", desc: "Maintenance and governance of job families, levels, descriptions, and FLSA classifications.", taskCount: 8 },
-      { id: "annual-incentive", name: "Annual Incentive Plan (AIP) Administration", domain: "variable-pay", cadence: "Annual", desc: "Design, execution, and analysis of the short-term annual incentive bonus program.", taskCount: 12 },
-      { id: "sales-comp", name: "Sales Compensation Management", domain: "variable-pay", cadence: "Annual", desc: "Design, administration, and monitoring of sales commission and incentive plans.", taskCount: 10 },
-      { id: "lti-equity", name: "Long-Term Incentive / Equity Administration", domain: "variable-pay", cadence: "Annual", desc: "Administration of equity grants (RSUs, options, PSUs), vesting, exercises, and compliance.", taskCount: 12 },
-      { id: "recognition", name: "Recognition & Spot Awards", domain: "variable-pay", cadence: "Annual", desc: "Design and administration of employee recognition programs and discretionary awards.", taskCount: 6 },
-      { id: "retention", name: "Retention Program Management", domain: "variable-pay", cadence: "Annual", desc: "Identification of flight risks and design/execution of targeted retention strategies.", taskCount: 6 },
-      { id: "exec-annual", name: "Annual Executive Comp Cycle", domain: "exec-comp", cadence: "Annual", desc: "Annual executive compensation benchmarking, recommendation, and approval cycle.", taskCount: 10 },
-      { id: "proxy-cda", name: "Proxy Statement & CD&A", domain: "exec-comp", cadence: "Annual", desc: "Preparation of proxy statement compensation disclosures including CD&A, pay tables, and say-on-pay.", taskCount: 10 },
-      { id: "board-committee", name: "Compensation Committee Governance", domain: "exec-comp", cadence: "Annual", desc: "Compensation committee calendar, meeting preparation, governance compliance, and advisory support.", taskCount: 8 },
-      { id: "director-comp", name: "Board of Directors Compensation", domain: "exec-comp", cadence: "Annual", desc: "Comprehensive director pay program design, benchmarking, equity administration, and regulatory disclosure.", taskCount: 14 },
-      { id: "exec-benefits", name: "Executive Benefits & Perquisites", domain: "exec-comp", cadence: "Annual", desc: "Administration of NQDC plans, SERPs, perquisites, and change-in-control provisions.", taskCount: 8 },
-      { id: "global-structures", name: "Global Pay Structure Management", domain: "global", cadence: "Annual", desc: "Country-specific salary structure review, currency analysis, and global grading harmonization.", taskCount: 8 },
-      { id: "global-mobility", name: "Global Mobility & Expatriate Compensation", domain: "global", cadence: "Annual", desc: "International assignment policy, package design, tax equalization, and allowance benchmarking.", taskCount: 10 },
-      { id: "intl-compliance", name: "International Compliance", domain: "global", cadence: "Annual", desc: "Country labor law monitoring, works council coordination, data privacy, and statutory reporting.", taskCount: 8 },
-      { id: "reg-compliance", name: "Regulatory Compliance", domain: "compliance", cadence: "Annual", desc: "FLSA, EEO-1, pay transparency, AAP, and government contractor compliance management.", taskCount: 10 },
-      { id: "pay-transparency", name: "Pay Transparency & Reporting", domain: "compliance", cadence: "Annual", desc: "Pay range disclosure compliance, pay gap reporting, and internal equity communications.", taskCount: 8 },
-      { id: "comp-governance", name: "Compensation Governance", domain: "compliance", cadence: "Annual", desc: "Compensation philosophy, policies, approval authorities, and risk management documentation.", taskCount: 8 },
-      { id: "survey-mgmt", name: "Survey Participation & Management", domain: "operations", cadence: "Annual", desc: "Management of compensation survey vendor relationships, submissions, and data library.", taskCount: 8 },
-      { id: "hris-tech", name: "HRIS & Technology Management", domain: "operations", cadence: "Annual", desc: "Compensation system configuration, reporting, data quality, and technology roadmap.", taskCount: 8 },
-      { id: "budget-planning", name: "Budget & Financial Planning", domain: "operations", cadence: "Annual", desc: "Total compensation budgeting, forecasting, variance analysis, and financial audit support.", taskCount: 8 },
-      { id: "team-stakeholder", name: "Team & Stakeholder Management", domain: "operations", cadence: "Annual", desc: "Team development, manager training, HRBP support, and stakeholder communication cadence.", taskCount: 6 },
+      { id: "salary-structure", name: "Annual Salary Structure Review", domain: "base-pay" },
+      { id: "market-pricing", name: "Market Pricing & Benchmarking", domain: "base-pay" },
+      { id: "merit-cycle", name: "Annual Merit Cycle", domain: "base-pay" },
+      { id: "pay-equity", name: "Pay Equity Analysis", domain: "base-pay" },
+      { id: "job-architecture", name: "Job Architecture & Evaluation", domain: "base-pay" },
+      { id: "annual-incentive", name: "Annual Incentive Plan (AIP)", domain: "variable-pay" },
+      { id: "sales-comp", name: "Sales Compensation Management", domain: "variable-pay" },
+      { id: "lti-equity", name: "Long-Term Incentive / Equity", domain: "variable-pay" },
+      { id: "recognition", name: "Recognition & Spot Awards", domain: "variable-pay" },
+      { id: "retention", name: "Retention Program Management", domain: "variable-pay" },
+      { id: "exec-annual", name: "Annual Executive Comp Cycle", domain: "exec-comp" },
+      { id: "proxy-cda", name: "Proxy Statement & CD&A", domain: "exec-comp" },
+      { id: "board-committee", name: "Compensation Committee", domain: "exec-comp" },
+      { id: "director-comp", name: "Board of Directors Comp", domain: "exec-comp" },
+      { id: "exec-benefits", name: "Executive Benefits & Perqs", domain: "exec-comp" },
+      { id: "global-structures", name: "Global Pay Structures", domain: "global" },
+      { id: "global-mobility", name: "Global Mobility & Expat", domain: "global" },
+      { id: "intl-compliance", name: "International Compliance", domain: "global" },
+      { id: "reg-compliance", name: "Regulatory Compliance", domain: "compliance" },
+      { id: "pay-transparency", name: "Pay Transparency & Reporting", domain: "compliance" },
+      { id: "comp-governance", name: "Compensation Governance", domain: "compliance" },
+      { id: "survey-mgmt", name: "Survey Management", domain: "operations" },
+      { id: "hris-tech", name: "HRIS & Technology", domain: "operations" },
+      { id: "budget-planning", name: "Budget & Financial Planning", domain: "operations" },
+      { id: "team-stakeholder", name: "Team & Stakeholders", domain: "operations" },
     ];
 
-    const API_BASE = "/api";
+    // ===================== ICONS (SVG) =====================
+    const mkI = (d) => ({size=18, color, className=""} = {}) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+        fill="none" stroke={color||"currentColor"} strokeWidth={2} strokeLinecap="round"
+        strokeLinejoin="round" className={className} style={{display:"inline-block",verticalAlign:"middle",flexShrink:0}}
+        dangerouslySetInnerHTML={{__html:d}} />
+    );
+    const IcoSearch = mkI(`<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>`);
+    const IcoChevDown = mkI(`<path d="m6 9 6 6 6-6"/>`);
+    const IcoChevRight = mkI(`<path d="m9 18 6-6-6-6"/>`);
+    const IcoPlus = mkI(`<path d="M5 12h14"/><path d="M12 5v14"/>`);
+    const IcoX = mkI(`<path d="M18 6 6 18"/><path d="m6 6 12 12"/>`);
+    const IcoRefresh = mkI(`<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>`);
+    const IcoTrash = mkI(`<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>`);
+    const IcoMsg = mkI(`<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>`);
+    const IcoActivity = mkI(`<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>`);
+    const IcoDash = mkI(`<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>`);
+    const IcoTable = mkI(`<path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/>`);
+    const IcoKanban = mkI(`<rect width="6" height="14" x="2" y="5" rx="1"/><rect width="6" height="8" x="9" y="5" rx="1"/><rect width="6" height="11" x="16" y="5" rx="1"/>`);
+    const IcoCal = mkI(`<rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>`);
+    const IcoStar = mkI(`<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>`);
+    const IcoHome = mkI(`<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>`);
+    const IcoClock = mkI(`<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>`);
+    const IcoCheck = mkI(`<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>`);
+    const IcoAlert = mkI(`<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>`);
+    const IcoSend = mkI(`<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>`);
+    const IcoMenu = mkI(`<line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>`);
 
-    // ==================== TOAST COMPONENT ====================
-    function Toast({ message, type = "success", onClose }) {
+    // ===================== HELPERS =====================
+    const fmtDate = (d) => { if(!d) return ""; const dt = new Date(d); return dt.toLocaleDateString("en-US", {month:"short",day:"numeric"}); };
+    const fmtDateFull = (d) => { if(!d) return ""; const dt = new Date(d); return dt.toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric"}); };
+    const fmtTime = (d) => { if(!d) return ""; const dt = new Date(d); return dt.toLocaleTimeString("en-US", {hour:"numeric",minute:"2-digit"}); };
+    const getInitials = (name) => name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0,2);
+    const ownerColor = (name) => OWNER_COLORS[name] || "#888";
+
+    // ===================== CLICK OUTSIDE HOOK =====================
+    function useClickOutside(ref, handler) {
       useEffect(() => {
-        const timer = setTimeout(onClose, 3000);
-        return () => clearTimeout(timer);
-      }, [onClose]);
+        const listener = (e) => { if (ref.current && !ref.current.contains(e.target)) handler(); };
+        document.addEventListener("mousedown", listener);
+        return () => document.removeEventListener("mousedown", listener);
+      }, [ref, handler]);
+    }
 
-      const bgColor = type === "success" ? "bg-green-500" : "bg-red-500";
+    // ===================== TOAST =====================
+    function Toast({ message, type="success", onClose }) {
+      useEffect(() => { const t = setTimeout(onClose, 2500); return () => clearTimeout(t); }, [onClose]);
+      const bg = type === "success" ? "#00c875" : "#e2445c";
       return (
-        <div className={`toast-enter fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded shadow-lg z-50`}>
+        <div className="toast-anim" style={{position:"fixed",top:16,right:16,zIndex:200,background:bg,color:"#fff",padding:"10px 20px",borderRadius:8,fontSize:14,fontWeight:500,boxShadow:"0 4px 12px rgba(0,0,0,0.15)"}}>
           {message}
         </div>
       );
     }
 
-    // ==================== ICON SELECTOR ====================
-    function getDomainIcon(domainId) {
-      const iconType = DOMAIN_META[domainId]?.icon;
-      const props = { size: 16, color: "currentColor" };
-      switch (iconType) {
-        case "dollar": return <DollarSign {...props} />;
-        case "target": return <Target {...props} />;
-        case "briefcase": return <Briefcase {...props} />;
-        case "globe": return <Globe {...props} />;
-        case "shield": return <Shield {...props} />;
-        case "settings": return <Settings {...props} />;
-        default: return null;
-      }
+    // ===================== INLINE DROPDOWN =====================
+    function InlineDropdown({ options, value, onSelect, renderOption, cellStyle, renderValue }) {
+      const [open, setOpen] = useState(false);
+      const ref = useRef(null);
+      useClickOutside(ref, () => setOpen(false));
+      return (
+        <div ref={ref} style={{position:"relative",...cellStyle}} onClick={(e) => { e.stopPropagation(); setOpen(!open); }}>
+          {renderValue ? renderValue(value) : value}
+          {open && (
+            <div className="cell-dropdown" onClick={e => e.stopPropagation()}>
+              {options.map(opt => (
+                <div key={opt.id || opt} className="cell-dropdown-option" onClick={() => { onSelect(opt.id || opt); setOpen(false); }}>
+                  {renderOption ? renderOption(opt) : (opt.label || opt)}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
     }
 
-    // ==================== MAIN APP ====================
-    function CompTaskHub() {
-      const [view, setView] = useState("dashboard");
-      const [tasks, setTasks] = useState([]);
-      const [loading, setLoading] = useState(true);
-      const [selectedTask, setSelectedTask] = useState(null);
-      const [expandedDomains, setExpandedDomains] = useState({});
-      const [searchQuery, setSearchQuery] = useState("");
-      const [filters, setFilters] = useState({ status: null, priority: null, owner: null });
-      const [selectedBoard, setSelectedBoard] = useState(null);
-      const [addTaskBoard, setAddTaskBoard] = useState(null);
-      const [toast, setToast] = useState(null);
+    // ===================== STATUS CELL =====================
+    function StatusCell({ value, onChange }) {
+      const meta = STATUS_MAP[value] || STATUS_MAP.not_started;
+      return (
+        <InlineDropdown
+          options={STATUS_ORDER.map(id => ({ id, ...STATUS_MAP[id] }))}
+          value={value}
+          onSelect={onChange}
+          cellStyle={{ background: meta.color, color: meta.textColor, justifyContent:"center", textAlign:"center", fontSize:13, fontWeight:500, padding:"0 8px", minHeight:38, display:"flex", alignItems:"center", cursor:"pointer", borderRight:"1px solid rgba(0,0,0,0.06)" }}
+          renderValue={() => meta.label}
+          renderOption={(opt) => (
+            <React.Fragment>
+              <span style={{width:12,height:12,borderRadius:3,background:opt.color,flexShrink:0}}></span>
+              <span>{opt.label}</span>
+            </React.Fragment>
+          )}
+        />
+      );
+    }
 
-      // Fetch tasks from API
-      const fetchTasks = useCallback(async () => {
-        try {
-          const res = await fetch(`${API_BASE}/tasks`);
-          if (!res.ok) throw new Error("Failed to fetch tasks");
-          const data = await res.json();
-          setTasks(data || []);
-        } catch (err) {
-          console.error("Fetch error:", err);
-          setToast({ message: "Failed to load tasks", type: "error" });
-        } finally {
-          setLoading(false);
-        }
-      }, []);
+    // ===================== PRIORITY CELL =====================
+    function PriorityCell({ value, onChange }) {
+      const meta = PRIORITY_MAP[value] || PRIORITY_MAP.medium;
+      return (
+        <InlineDropdown
+          options={["critical","high","medium","low"].map(id => ({ id, ...PRIORITY_MAP[id] }))}
+          value={value}
+          onSelect={onChange}
+          cellStyle={{ background: meta.color, color: meta.textColor, justifyContent:"center", textAlign:"center", fontSize:13, fontWeight:500, padding:"0 8px", minHeight:38, display:"flex", alignItems:"center", cursor:"pointer", borderRight:"1px solid rgba(0,0,0,0.06)" }}
+          renderValue={() => meta.label}
+          renderOption={(opt) => (
+            <React.Fragment>
+              <span style={{width:12,height:12,borderRadius:3,background:opt.color,flexShrink:0}}></span>
+              <span>{opt.label}</span>
+            </React.Fragment>
+          )}
+        />
+      );
+    }
 
-      // Initial fetch and polling
-      useEffect(() => {
-        fetchTasks();
-        const pollInterval = setInterval(fetchTasks, 5000);
-        return () => clearInterval(pollInterval);
-      }, [fetchTasks]);
+    // ===================== OWNER CELL =====================
+    function OwnerCell({ value, onChange }) {
+      return (
+        <InlineDropdown
+          options={OWNERS}
+          value={value}
+          onSelect={onChange}
+          cellStyle={{ padding:"0 10px", minHeight:38, display:"flex", alignItems:"center", cursor:"pointer", gap:6, borderRight:"1px solid rgba(0,0,0,0.06)", fontSize:13 }}
+          renderValue={(v) => (
+            <React.Fragment>
+              <span className="owner-avatar" style={{background:ownerColor(v),width:26,height:26,fontSize:10}}>{getInitials(v)}</span>
+              <span style={{color:"#323338"}}>{v}</span>
+            </React.Fragment>
+          )}
+          renderOption={(opt) => (
+            <React.Fragment>
+              <span className="owner-avatar" style={{background:ownerColor(opt),width:24,height:24,fontSize:10}}>{getInitials(opt)}</span>
+              <span>{opt}</span>
+            </React.Fragment>
+          )}
+        />
+      );
+    }
 
-      // API calls for mutations
-      const updateTask = useCallback(async (taskId, updates) => {
-        try {
-          const res = await fetch(`${API_BASE}/tasks/${taskId}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(updates),
-          });
-          if (!res.ok) throw new Error("Failed to update task");
-          await fetchTasks();
-          setToast({ message: "Task updated", type: "success" });
-        } catch (err) {
-          console.error("Update error:", err);
-          setToast({ message: "Failed to update task", type: "error" });
-        }
-      }, [fetchTasks]);
+    // ===================== DATE CELL =====================
+    function DateCell({ value, onChange }) {
+      const [editing, setEditing] = useState(false);
+      const ref = useRef(null);
+      useClickOutside(ref, () => setEditing(false));
 
-      const deleteTask = useCallback(async (taskId) => {
-        if (!window.confirm("Delete this task? This cannot be undone.")) return;
-        try {
-          const res = await fetch(`${API_BASE}/tasks/${taskId}`, { method: "DELETE" });
-          if (!res.ok) throw new Error("Failed to delete task");
-          await fetchTasks();
-          setSelectedTask(null);
-          setToast({ message: "Task deleted", type: "success" });
-        } catch (err) {
-          console.error("Delete error:", err);
-          setToast({ message: "Failed to delete task", type: "error" });
-        }
-      }, [fetchTasks]);
+      if (editing) {
+        return (
+          <div ref={ref} style={{padding:"0 6px",minHeight:38,display:"flex",alignItems:"center",borderRight:"1px solid rgba(0,0,0,0.06)"}} onClick={e => e.stopPropagation()}>
+            <input type="date" defaultValue={value?.split("T")[0] || ""} autoFocus
+              style={{border:"1px solid #0073ea",borderRadius:4,padding:"2px 6px",fontSize:13,outline:"none",width:"100%"}}
+              onBlur={(e) => { onChange(e.target.value); setEditing(false); }}
+              onKeyDown={(e) => { if(e.key==="Enter"){onChange(e.target.value);setEditing(false);} }} />
+          </div>
+        );
+      }
+      return (
+        <div className="cell-editable" style={{padding:"0 10px",borderRight:"1px solid rgba(0,0,0,0.06)",fontSize:13,color:"#323338"}} onClick={(e) => { e.stopPropagation(); setEditing(true); }}>
+          {fmtDate(value) || "-"}
+        </div>
+      );
+    }
 
-      const createTask = useCallback(async (newTask) => {
-        try {
-          const res = await fetch(`${API_BASE}/tasks`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(newTask),
-          });
-          if (!res.ok) throw new Error("Failed to create task");
-          await fetchTasks();
-          setAddTaskBoard(null);
-          setToast({ message: "Task created", type: "success" });
-        } catch (err) {
-          console.error("Create error:", err);
-          setToast({ message: "Failed to create task", type: "error" });
-        }
-      }, [fetchTasks]);
+    // ===================== TEXT CELL (for title inline edit) =====================
+    function TitleCell({ value, onChange, onClick }) {
+      const [editing, setEditing] = useState(false);
+      const [text, setText] = useState(value);
+      const ref = useRef(null);
 
-      const resetToTemplate = useCallback(async () => {
-        if (!window.confirm("Reset all tasks to template defaults? This will delete all custom changes.")) return;
-        try {
-          const res = await fetch(`${API_BASE}/seed`, { method: "POST" });
-          if (!res.ok) throw new Error("Failed to reset");
-          await fetchTasks();
-          setToast({ message: "Tasks reset to defaults", type: "success" });
-        } catch (err) {
-          console.error("Reset error:", err);
-          setToast({ message: "Failed to reset tasks", type: "error" });
-        }
-      }, [fetchTasks]);
+      useEffect(() => setText(value), [value]);
 
-      const toggleDomain = (domainId) => {
-        setExpandedDomains(prev => ({ ...prev, [domainId]: !prev[domainId] }));
-      };
+      if (editing) {
+        return (
+          <div style={{padding:"0 10px",minHeight:38,display:"flex",alignItems:"center",flex:1}} onClick={e => e.stopPropagation()}>
+            <input ref={ref} type="text" value={text} autoFocus
+              style={{border:"1px solid #0073ea",borderRadius:4,padding:"4px 8px",fontSize:13,outline:"none",width:"100%",fontWeight:500}}
+              onChange={(e) => setText(e.target.value)}
+              onBlur={() => { if(text.trim() && text !== value) onChange(text); setEditing(false); }}
+              onKeyDown={(e) => { if(e.key==="Enter"){ if(text.trim() && text !== value) onChange(text); setEditing(false); } if(e.key==="Escape") setEditing(false); }} />
+          </div>
+        );
+      }
+      return (
+        <div style={{padding:"0 10px",minHeight:38,display:"flex",alignItems:"center",flex:1,borderRight:"1px solid rgba(0,0,0,0.06)",cursor:"pointer"}}
+          onClick={onClick}
+          onDoubleClick={(e) => { e.stopPropagation(); setEditing(true); }}>
+          <span style={{fontSize:13,fontWeight:500,color:"#323338",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{value}</span>
+        </div>
+      );
+    }
 
-      // Filtered and searched tasks
-      const filteredTasks = useMemo(() => {
-        return tasks.filter(task => {
-          if (searchQuery && !task.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-          if (filters.status && task.status !== filters.status) return false;
-          if (filters.priority && task.priority !== filters.priority) return false;
-          if (filters.owner && task.owner !== filters.owner) return false;
-          return true;
+    // ===================== GROUP HEADER =====================
+    function GroupHeader({ status, count, collapsed, onToggle, color }) {
+      return (
+        <div className="group-header" onClick={onToggle}
+          style={{background:color,color:"#fff",padding:"8px 16px",display:"flex",alignItems:"center",gap:10,borderRadius:collapsed?"6px":"6px 6px 0 0",marginTop:16}}>
+          <span style={{transform:collapsed?"rotate(-90deg)":"rotate(0deg)",transition:"transform 0.15s",display:"flex"}}>
+            <IcoChevDown size={16} color="#fff" />
+          </span>
+          <span style={{fontWeight:600,fontSize:14}}>{STATUS_MAP[status]?.label || status}</span>
+          <span style={{background:"rgba(255,255,255,0.25)",padding:"1px 8px",borderRadius:10,fontSize:12,fontWeight:500}}>{count}</span>
+        </div>
+      );
+    }
+
+    // ===================== TABLE VIEW =====================
+    function TableView({ tasks, onUpdate, onDelete, onSelectTask, searchQuery, setSearchQuery, filters, setFilters, boardId }) {
+      const [collapsedGroups, setCollapsedGroups] = useState({});
+
+      const boardTasks = useMemo(() => {
+        let t = boardId ? tasks.filter(tk => tk.boardId === boardId) : tasks;
+        if (searchQuery) t = t.filter(tk => tk.title.toLowerCase().includes(searchQuery.toLowerCase()));
+        if (filters.status) t = t.filter(tk => tk.status === filters.status);
+        if (filters.priority) t = t.filter(tk => tk.priority === filters.priority);
+        if (filters.owner) t = t.filter(tk => tk.owner === filters.owner);
+        return t;
+      }, [tasks, boardId, searchQuery, filters]);
+
+      const grouped = useMemo(() => {
+        const groups = {};
+        STATUS_ORDER.forEach(s => { groups[s] = []; });
+        boardTasks.forEach(t => {
+          if (!groups[t.status]) groups[t.status] = [];
+          groups[t.status].push(t);
         });
-      }, [tasks, searchQuery, filters]);
+        return groups;
+      }, [boardTasks]);
 
-      // Dashboard metrics
-      const metrics = useMemo(() => {
-        const now = new Date();
-        const total = tasks.length;
-        const inProgress = tasks.filter(t => t.status === "in_progress").length;
-        const completed = tasks.filter(t => t.status === "complete").length;
-        const overdue = tasks.filter(t => {
-          const dueDate = new Date(t.dueDate);
-          return dueDate < now && t.status !== "complete";
-        }).length;
-        return { total, inProgress, completed, overdue };
-      }, [tasks]);
+      const toggleGroup = (s) => setCollapsedGroups(prev => ({...prev, [s]: !prev[s]}));
 
-      // Domain progress
-      const domainProgress = useMemo(() => {
-        const progress = {};
-        Object.keys(DOMAIN_META).forEach(domainId => {
-          const domainTasks = tasks.filter(t => t.domainId === domainId);
-          const completedCount = domainTasks.filter(t => t.status === "complete").length;
-          progress[domainId] = {
-            total: domainTasks.length,
-            completed: completedCount,
-            percent: domainTasks.length > 0 ? Math.round((completedCount / domainTasks.length) * 100) : 0,
-          };
-        });
-        return progress;
-      }, [tasks]);
-
-      // Monthly distribution
-      const monthlyData = useMemo(() => {
-        const data = MONTHS.map((month, idx) => ({
-          name: month,
-          tasks: tasks.filter(t => t.month === idx + 1).length,
-        }));
-        return data;
-      }, [tasks]);
-
-      // Upcoming deadlines
-      const upcomingDeadlines = useMemo(() => {
-        const now = new Date();
-        return tasks
-          .filter(t => t.status !== "complete" && new Date(t.dueDate) >= now)
-          .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
-          .slice(0, 5);
-      }, [tasks]);
-
-      // Recently completed
-      const recentlyCompleted = useMemo(() => {
-        return tasks
-          .filter(t => t.status === "complete")
-          .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
-          .slice(0, 5);
-      }, [tasks]);
-
-      // Toggle status
-      const cycleStatus = (task) => {
-        const statuses = ["not_started", "in_progress", "in_review", "complete", "blocked"];
-        const currentIdx = statuses.indexOf(task.status);
-        const nextStatus = statuses[(currentIdx + 1) % statuses.length];
-        updateTask(task.id, { status: nextStatus });
-      };
-
-      // ==================== RENDER VIEWS ====================
-
-      // Dashboard View
-      const DashboardView = () => (
-        <div className="space-y-6">
-          <div className="grid grid-cols-4 gap-4">
-            <MetricCard label="Total Tasks" value={metrics.total} icon={<List size={24} color="currentColor" />} color="bg-blue-50" />
-            <MetricCard label="In Progress" value={metrics.inProgress} icon={<Clock size={24} color="currentColor" />} color="bg-purple-50" />
-            <MetricCard label="Overdue" value={metrics.overdue} icon={<AlertTriangle size={24} color="currentColor" />} color="bg-red-50" />
-            <MetricCard label="Completed" value={metrics.completed} icon={<CheckCircle2 size={24} color="currentColor" />} color="bg-green-50" />
-          </div>
-
-          <div className="grid grid-cols-2 gap-6">
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-              <h3 className="text-lg font-semibold mb-4">Domain Progress</h3>
-              <div className="space-y-3">
-                {Object.entries(DOMAIN_META).map(([domainId, meta]) => {
-                  const prog = domainProgress[domainId];
-                  return (
-                    <div key={domainId}>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm font-medium text-gray-700">{meta.name}</span>
-                        <span className="text-sm text-gray-500">{prog.completed}/{prog.total}</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="h-2 rounded-full" style={{width: `${prog.percent}%`, backgroundColor: meta.color}}></div>
-                      </div>
-                    </div>
-                  );
-                })}
+      return (
+        <div>
+          {/* Filter bar */}
+          <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:16,flexWrap:"wrap"}}>
+            <div style={{position:"relative",flex:"1 1 300px",maxWidth:400}}>
+              <IcoSearch size={16} color="#676879" className="" />
+              <input type="text" placeholder="Search tasks..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                style={{width:"100%",padding:"7px 12px 7px 32px",border:"1px solid #c3c6d4",borderRadius:4,fontSize:13,outline:"none",fontFamily:"inherit",position:"relative"}} />
+              <div style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}}>
               </div>
             </div>
-
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-              <h3 className="text-lg font-semibold mb-4">Monthly Distribution</h3>
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={monthlyData}>
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="tasks" fill="#3B82F6" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <select value={filters.status||""} onChange={e => setFilters({...filters, status:e.target.value||null})}
+              style={{padding:"7px 10px",border:"1px solid #c3c6d4",borderRadius:4,fontSize:13,fontFamily:"inherit",background:"#fff",cursor:"pointer"}}>
+              <option value="">All Statuses</option>
+              {STATUS_ORDER.map(s => <option key={s} value={s}>{STATUS_MAP[s].label}</option>)}
+            </select>
+            <select value={filters.priority||""} onChange={e => setFilters({...filters, priority:e.target.value||null})}
+              style={{padding:"7px 10px",border:"1px solid #c3c6d4",borderRadius:4,fontSize:13,fontFamily:"inherit",background:"#fff",cursor:"pointer"}}>
+              <option value="">All Priorities</option>
+              {["critical","high","medium","low"].map(p => <option key={p} value={p}>{PRIORITY_MAP[p].label}</option>)}
+            </select>
+            <select value={filters.owner||""} onChange={e => setFilters({...filters, owner:e.target.value||null})}
+              style={{padding:"7px 10px",border:"1px solid #c3c6d4",borderRadius:4,fontSize:13,fontFamily:"inherit",background:"#fff",cursor:"pointer"}}>
+              <option value="">All Owners</option>
+              {OWNERS.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
+            <span style={{fontSize:13,color:"#676879"}}>{boardTasks.length} tasks</span>
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><Clock size={20} />Upcoming Deadlines</h3>
-              <div className="space-y-2">
-                {upcomingDeadlines.map(task => (
-                  <div key={task.id} className="p-3 bg-gray-50 rounded border border-gray-200 hover:bg-gray-100 cursor-pointer" onClick={() => setSelectedTask(task)}>
-                    <div className="flex justify-between items-start">
-                      <span className="font-medium text-sm">{task.title}</span>
-                      <span className="text-xs text-gray-500">{new Date(task.dueDate).toLocaleDateString()}</span>
-                    </div>
-                    <span className="text-xs text-gray-600">{task.boardName}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><CheckCircle2 size={20} />Recently Completed</h3>
-              <div className="space-y-2">
-                {recentlyCompleted.map(task => (
-                  <div key={task.id} className="p-3 bg-gray-50 rounded border border-gray-200 hover:bg-gray-100 cursor-pointer" onClick={() => setSelectedTask(task)}>
-                    <div className="flex justify-between items-start">
-                      <span className="font-medium text-sm">{task.title}</span>
-                      <span className="text-xs text-gray-500">{new Date(task.updatedAt).toLocaleDateString()}</span>
-                    </div>
-                    <span className="text-xs text-gray-600">{task.boardName}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-
-      // All Tasks View
-      const AllTasksView = () => (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200 space-y-4">
-            <div className="flex gap-4 items-center">
-              <div className="flex-1 relative">
-                <Search size={18} className="absolute left-3 top-3 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search tasks..."
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                />
-              </div>
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              <select value={filters.status || ""} onChange={e => setFilters({...filters, status: e.target.value || null})} className="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                <option value="">All Statuses</option>
-                {STATUSES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
-              </select>
-              <select value={filters.priority || ""} onChange={e => setFilters({...filters, priority: e.target.value || null})} className="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                <option value="">All Priorities</option>
-                {PRIORITIES.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
-              </select>
-              <select value={filters.owner || ""} onChange={e => setFilters({...filters, owner: e.target.value || null})} className="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                <option value="">All Owners</option>
-                {OWNERS.map(o => <option key={o} value={o}>{o}</option>)}
-              </select>
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">Title</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">Board</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">Owner</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">Priority</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">Due Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredTasks.map(task => {
-                  const statusMeta = STATUSES.find(s => s.id === task.status);
-                  const priorityMeta = PRIORITIES.find(p => p.id === task.priority);
-                  return (
-                    <tr key={task.id} className="task-row border-b border-gray-200 cursor-pointer" onClick={() => setSelectedTask(task)}>
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{task.title}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{task.boardName}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{task.owner}</td>
-                      <td className="px-6 py-4 text-sm">
-                        <span className="px-2 py-1 rounded text-xs font-medium" style={{backgroundColor: statusMeta.bg, color: statusMeta.color}}>
-                          {statusMeta.label}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        <span className="px-2 py-1 rounded text-xs font-medium" style={{backgroundColor: priorityMeta.color + "20", color: priorityMeta.color}}>
-                          {priorityMeta.label}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{new Date(task.dueDate).toLocaleDateString()}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      );
-
-      // Calendar View
-      const CalendarView = () => (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold mb-6">Task Distribution by Month</h3>
-          <div className="grid grid-cols-4 gap-4">
-            {MONTHS.map((month, idx) => {
-              const monthTasks = tasks.filter(t => t.month === idx + 1);
-              return (
-                <div key={month} className="p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:shadow-md cursor-pointer transition"
-                  onClick={() => {
-                    setView("all-tasks");
-                    setFilters({ status: null, priority: null, owner: null });
-                    setSearchQuery("");
-                  }}
-                >
-                  <div className="font-semibold text-gray-700">{month}</div>
-                  <div className="text-2xl font-bold text-blue-600 mt-2">{monthTasks.length}</div>
-                  <div className="text-xs text-gray-500 mt-2">
-                    {monthTasks.filter(t => t.status === "complete").length} completed
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      );
-
-      // Templates View
-      const TemplatesView = () => (
-        <div className="space-y-6">
-          {Object.entries(DOMAIN_META).map(([domainId, meta]) => {
-            const domainBoards = BOARDS.filter(b => b.domain === domainId);
-            const expanded = expandedDomains[domainId];
+          {/* Grouped table */}
+          {STATUS_ORDER.map(status => {
+            const groupTasks = grouped[status] || [];
+            if (groupTasks.length === 0) return null;
+            const isCollapsed = collapsedGroups[status];
+            const groupColor = STATUS_MAP[status].color;
             return (
-              <div key={domainId} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                <div
-                  className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50"
-                  onClick={() => toggleDomain(domainId)}
-                >
-                  <div className="flex items-center gap-3">
-                    {getDomainIcon(domainId)}
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{meta.name}</h3>
-                      <p className="text-sm text-gray-500">{domainBoards.length} boards</p>
+              <div key={status} style={{marginBottom:8}}>
+                <GroupHeader status={status} count={groupTasks.length} collapsed={isCollapsed} onToggle={() => toggleGroup(status)} color={groupColor} />
+                {!isCollapsed && (
+                  <div style={{border:"1px solid #e6e9ef",borderTop:"none",borderRadius:"0 0 6px 6px",overflow:"hidden",background:"#fff"}}>
+                    {/* Column headers */}
+                    <div style={{display:"flex",borderBottom:"1px solid #e6e9ef",background:"#f6f7fb"}}>
+                      <div style={{width:40,minHeight:32,display:"flex",alignItems:"center",justifyContent:"center",borderRight:"1px solid rgba(0,0,0,0.06)"}}>
+                        <input type="checkbox" disabled style={{opacity:0.3}} />
+                      </div>
+                      <div style={{flex:"1 1 300px",padding:"0 10px",minHeight:32,display:"flex",alignItems:"center",borderRight:"1px solid rgba(0,0,0,0.06)",fontSize:12,fontWeight:600,color:"#676879",textTransform:"uppercase",letterSpacing:"0.5px"}}>Task</div>
+                      <div style={{width:140,padding:"0 10px",minHeight:32,display:"flex",alignItems:"center",borderRight:"1px solid rgba(0,0,0,0.06)",fontSize:12,fontWeight:600,color:"#676879",textTransform:"uppercase",letterSpacing:"0.5px"}}>Owner</div>
+                      <div style={{width:120,minHeight:32,display:"flex",alignItems:"center",justifyContent:"center",borderRight:"1px solid rgba(0,0,0,0.06)",fontSize:12,fontWeight:600,color:"#676879",textTransform:"uppercase",letterSpacing:"0.5px"}}>Status</div>
+                      <div style={{width:100,minHeight:32,display:"flex",alignItems:"center",justifyContent:"center",borderRight:"1px solid rgba(0,0,0,0.06)",fontSize:12,fontWeight:600,color:"#676879",textTransform:"uppercase",letterSpacing:"0.5px"}}>Priority</div>
+                      <div style={{width:110,padding:"0 10px",minHeight:32,display:"flex",alignItems:"center",borderRight:"1px solid rgba(0,0,0,0.06)",fontSize:12,fontWeight:600,color:"#676879",textTransform:"uppercase",letterSpacing:"0.5px"}}>Due Date</div>
+                      {!boardId && <div style={{width:160,padding:"0 10px",minHeight:32,display:"flex",alignItems:"center",fontSize:12,fontWeight:600,color:"#676879",textTransform:"uppercase",letterSpacing:"0.5px"}}>Board</div>}
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-600">{domainBoards.length}</span>
-                    {expanded ? <ChevronDown size={20} color="currentColor" /> : <ChevronRight size={20} color="currentColor" />}
-                  </div>
-                </div>
-
-                {expanded && (
-                  <div className="border-t border-gray-200 divide-y divide-gray-200">
-                    {domainBoards.map(board => {
-                      const boardTasks = tasks.filter(t => t.boardId === board.id);
-                      const completed = boardTasks.filter(t => t.status === "complete").length;
-                      return (
-                        <div key={board.id} className="p-4 hover:bg-gray-50 cursor-pointer transition" onClick={() => setSelectedBoard(board)}>
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <h4 className="font-medium text-gray-900">{board.name}</h4>
-                              <p className="text-sm text-gray-500 mt-1">{board.desc}</p>
-                            </div>
-                            <span className="text-xs font-medium px-2 py-1 bg-gray-200 text-gray-700 rounded">{board.cadence}</span>
-                          </div>
-                          <div className="flex justify-between items-center mt-3">
-                            <div className="flex-1 mr-3">
-                              <div className="flex justify-between mb-1">
-                                <span className="text-xs text-gray-600">Progress</span>
-                                <span className="text-xs font-medium text-gray-700">{completed}/{boardTasks.length}</span>
-                              </div>
-                              <div className="w-full bg-gray-200 rounded-full h-2">
-                                <div className="h-2 rounded-full" style={{width: `${boardTasks.length > 0 ? (completed / boardTasks.length) * 100 : 0}%`, backgroundColor: meta.color}}></div>
-                              </div>
-                            </div>
-                            <button className="px-3 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded" onClick={() => setSelectedBoard(board)}>
-                              View
-                            </button>
-                          </div>
+                    {/* Task rows */}
+                    {groupTasks.map(task => (
+                      <div key={task.id} className="task-row" style={{display:"flex",borderBottom:"1px solid #e6e9ef"}}>
+                        <div style={{width:40,minHeight:38,display:"flex",alignItems:"center",justifyContent:"center",borderRight:"1px solid rgba(0,0,0,0.06)"}}>
+                          <input type="checkbox" style={{cursor:"pointer"}} onClick={e => e.stopPropagation()} />
                         </div>
-                      );
-                    })}
+                        <TitleCell value={task.title} onChange={(v) => onUpdate(task.id, {title:v})} onClick={() => onSelectTask(task)} />
+                        <div style={{width:140}}><OwnerCell value={task.owner} onChange={(v) => onUpdate(task.id, {owner:v})} /></div>
+                        <div style={{width:120}}><StatusCell value={task.status} onChange={(v) => onUpdate(task.id, {status:v})} /></div>
+                        <div style={{width:100}}><PriorityCell value={task.priority} onChange={(v) => onUpdate(task.id, {priority:v})} /></div>
+                        <div style={{width:110}}><DateCell value={task.dueDate} onChange={(v) => onUpdate(task.id, {dueDate:v})} /></div>
+                        {!boardId && <div style={{width:160,padding:"0 10px",minHeight:38,display:"flex",alignItems:"center",fontSize:12,color:"#676879",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{task.boardName}</div>}
+                      </div>
+                    ))}
+                    {/* Group summary */}
+                    <div style={{display:"flex",borderTop:"2px solid "+groupColor,background:"#f6f7fb",minHeight:32}}>
+                      <div style={{flex:1,padding:"4px 16px",fontSize:12,color:"#676879",display:"flex",alignItems:"center"}}>
+                        {groupTasks.length} {groupTasks.length === 1 ? "task" : "tasks"}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
             );
           })}
+
+          {boardTasks.length === 0 && (
+            <div style={{textAlign:"center",padding:60,color:"#676879"}}>
+              <p style={{fontSize:16,fontWeight:500}}>No tasks found</p>
+              <p style={{fontSize:13,marginTop:8}}>Try adjusting your filters or search query</p>
+            </div>
+          )}
         </div>
       );
+    }
 
-      // Board View
-      const BoardDetailView = () => {
-        const boardTasks = tasks.filter(t => t.boardId === selectedBoard.id);
-        const domainMeta = DOMAIN_META[selectedBoard.domain];
-        return (
-          <div className="space-y-4">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-start justify-between mb-6">
-                <div>
-                  <button className="text-sm text-blue-600 hover:underline mb-2" onClick={() => setSelectedBoard(null)}>
-                    &larr; Back to Templates
-                  </button>
-                  <h2 className="text-2xl font-bold text-gray-900">{selectedBoard.name}</h2>
-                  <p className="text-gray-600 mt-2">{selectedBoard.desc}</p>
-                  <div className="flex gap-4 mt-4">
-                    <span className="flex items-center gap-1 text-sm text-gray-600">
-                      {getDomainIcon(selectedBoard.domain)}
-                      {domainMeta.name}
-                    </span>
-                    <span className="text-sm text-gray-600">Cadence: {selectedBoard.cadence}</span>
+    // ===================== KANBAN VIEW =====================
+    function KanbanView({ tasks, onUpdate, onSelectTask, boardId }) {
+      const boardTasks = boardId ? tasks.filter(t => t.boardId === boardId) : tasks;
+      return (
+        <div style={{display:"flex",gap:16,overflowX:"auto",padding:"4px 0",minHeight:"calc(100vh - 200px)"}}>
+          {STATUS_ORDER.map(status => {
+            const col = boardTasks.filter(t => t.status === status);
+            const meta = STATUS_MAP[status];
+            return (
+              <div key={status} style={{minWidth:260,maxWidth:300,flex:"1 1 260px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 4px",marginBottom:8}}>
+                  <span style={{width:10,height:10,borderRadius:3,background:meta.color}}></span>
+                  <span style={{fontSize:14,fontWeight:600,color:"#323338"}}>{meta.label}</span>
+                  <span style={{fontSize:12,color:"#676879",background:"#e6e9ef",padding:"0 8px",borderRadius:10}}>{col.length}</span>
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {col.map(task => {
+                    const pMeta = PRIORITY_MAP[task.priority];
+                    return (
+                      <div key={task.id} className="kanban-card" onClick={() => onSelectTask(task)}
+                        style={{borderLeft:`3px solid ${meta.color}`}}>
+                        <div style={{fontSize:13,fontWeight:500,color:"#323338",marginBottom:8,lineHeight:1.4}}>{task.title}</div>
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                          <div style={{display:"flex",alignItems:"center",gap:6}}>
+                            <span className="owner-avatar" style={{background:ownerColor(task.owner),width:22,height:22,fontSize:9}}>{getInitials(task.owner)}</span>
+                            <span style={{fontSize:11,color:"#676879"}}>{task.owner}</span>
+                          </div>
+                          <div style={{display:"flex",alignItems:"center",gap:6}}>
+                            <span style={{fontSize:11,color:"#676879"}}>{fmtDate(task.dueDate)}</span>
+                            <span style={{width:8,height:8,borderRadius:2,background:pMeta.color}} title={pMeta.label}></span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // ===================== CALENDAR VIEW =====================
+    function CalendarView({ tasks, boardId }) {
+      const boardTasks = boardId ? tasks.filter(t => t.boardId === boardId) : tasks;
+      return (
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4, 1fr)",gap:16}}>
+          {MONTHS.map((month, idx) => {
+            const mTasks = boardTasks.filter(t => t.month === idx + 1);
+            const done = mTasks.filter(t => t.status === "complete").length;
+            const pct = mTasks.length > 0 ? Math.round((done / mTasks.length) * 100) : 0;
+            const now = new Date();
+            const isCurrent = now.getMonth() === idx;
+            return (
+              <div key={month} style={{background:"#fff",borderRadius:8,padding:20,border:isCurrent?"2px solid #0073ea":"1px solid #e6e9ef",boxShadow:"0 1px 4px rgba(0,0,0,0.04)"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                  <span style={{fontSize:15,fontWeight:600,color:"#323338"}}>{month}</span>
+                  {isCurrent && <span style={{fontSize:10,fontWeight:600,color:"#0073ea",background:"#cce5ff",padding:"2px 8px",borderRadius:10}}>CURRENT</span>}
+                </div>
+                <div style={{fontSize:28,fontWeight:700,color:"#323338"}}>{mTasks.length}</div>
+                <div style={{fontSize:12,color:"#676879",marginTop:4}}>{done} completed</div>
+                <div style={{marginTop:10,height:4,background:"#e6e9ef",borderRadius:2,overflow:"hidden"}}>
+                  <div style={{height:"100%",background:"#00c875",width:`${pct}%`,borderRadius:2,transition:"width 0.3s"}}></div>
+                </div>
+                <div style={{fontSize:11,color:"#676879",marginTop:4,textAlign:"right"}}>{pct}%</div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // ===================== DASHBOARD VIEW =====================
+    function DashboardView({ tasks }) {
+      const now = new Date();
+      const total = tasks.length;
+      const inProg = tasks.filter(t => t.status === "in_progress").length;
+      const done = tasks.filter(t => t.status === "complete").length;
+      const overdue = tasks.filter(t => new Date(t.dueDate) < now && t.status !== "complete").length;
+
+      const domainProg = useMemo(() => {
+        return Object.entries(DOMAIN_META).map(([id, meta]) => {
+          const dt = tasks.filter(t => t.domainId === id);
+          const dc = dt.filter(t => t.status === "complete").length;
+          return { id, name: meta.name, color: meta.color, total: dt.length, done: dc, pct: dt.length ? Math.round((dc/dt.length)*100) : 0 };
+        });
+      }, [tasks]);
+
+      const monthlyData = useMemo(() => MONTHS.map((m, i) => ({ name: m, tasks: tasks.filter(t => t.month === i+1).length })), [tasks]);
+
+      const upcoming = useMemo(() => tasks.filter(t => t.status !== "complete" && new Date(t.dueDate) >= now).sort((a,b) => new Date(a.dueDate) - new Date(b.dueDate)).slice(0,6), [tasks]);
+
+      const statusData = useMemo(() => STATUS_ORDER.map(s => ({
+        name: STATUS_MAP[s].label, value: tasks.filter(t => t.status === s).length, color: STATUS_MAP[s].color
+      })), [tasks]);
+
+      return (
+        <div>
+          {/* Metric cards */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4, 1fr)",gap:16,marginBottom:24}}>
+            {[
+              { label: "Total Tasks", value: total, color: "#0073ea", icon: IcoTable },
+              { label: "In Progress", value: inProg, color: "#fdab3d", icon: IcoClock },
+              { label: "Overdue", value: overdue, color: "#e2445c", icon: IcoAlert },
+              { label: "Completed", value: done, color: "#00c875", icon: IcoCheck },
+            ].map((m, i) => (
+              <div key={i} className="metric-card">
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                  <div>
+                    <div style={{fontSize:13,color:"#676879",marginBottom:8}}>{m.label}</div>
+                    <div style={{fontSize:32,fontWeight:700,color:"#323338"}}>{m.value}</div>
+                  </div>
+                  <div style={{width:40,height:40,borderRadius:8,background:m.color+"15",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <m.icon size={20} color={m.color} />
                   </div>
                 </div>
-                <button
-                  onClick={() => setAddTaskBoard(selectedBoard.id)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-                >
-                  <Plus size={18} /> Add Task
-                </button>
               </div>
+            ))}
+          </div>
 
-              <div className="flex justify-between mb-4">
-                <span className="text-sm font-medium text-gray-700">{boardTasks.length} total tasks</span>
-                <span className="text-sm font-medium text-gray-700">{boardTasks.filter(t => t.status === "complete").length} completed</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-3 mb-6">
-                <div
-                  className="h-3 rounded-full transition-all"
-                  style={{
-                    width: `${boardTasks.length > 0 ? (boardTasks.filter(t => t.status === "complete").length / boardTasks.length) * 100 : 0}%`,
-                    backgroundColor: domainMeta.color,
-                  }}
-                ></div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:24}}>
+            {/* Domain Progress */}
+            <div className="metric-card">
+              <h3 style={{fontSize:15,fontWeight:600,color:"#323338",marginBottom:16}}>Domain Progress</h3>
+              <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                {domainProg.map(d => (
+                  <div key={d.id}>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                      <span style={{fontSize:13,fontWeight:500,color:"#323338"}}>{d.name}</span>
+                      <span style={{fontSize:12,color:"#676879"}}>{d.done}/{d.total}</span>
+                    </div>
+                    <div style={{height:6,background:"#e6e9ef",borderRadius:3,overflow:"hidden"}}>
+                      <div style={{height:"100%",background:d.color,width:`${d.pct}%`,borderRadius:3,transition:"width 0.3s"}}></div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">Title</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">Owner</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">Priority</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">Due Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {boardTasks.map(task => {
-                      const statusMeta = STATUSES.find(s => s.id === task.status);
-                      const priorityMeta = PRIORITIES.find(p => p.id === task.priority);
-                      return (
-                        <tr key={task.id} className="task-row border-b border-gray-200 cursor-pointer" onClick={() => setSelectedTask(task)}>
-                          <td className="px-6 py-4 text-sm font-medium text-gray-900">{task.title}</td>
-                          <td className="px-6 py-4 text-sm text-gray-600">{task.owner}</td>
-                          <td className="px-6 py-4 text-sm">
-                            <span className="px-2 py-1 rounded text-xs font-medium cursor-pointer" style={{backgroundColor: statusMeta.bg, color: statusMeta.color}} onClick={(e) => { e.stopPropagation(); cycleStatus(task); }}>
-                              {statusMeta.label}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-sm">
-                            <span className="px-2 py-1 rounded text-xs font-medium" style={{backgroundColor: priorityMeta.color + "20", color: priorityMeta.color}}>
-                              {priorityMeta.label}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">{new Date(task.dueDate).toLocaleDateString()}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+            {/* Monthly Volume Chart */}
+            <div className="metric-card">
+              <h3 style={{fontSize:15,fontWeight:600,color:"#323338",marginBottom:16}}>Monthly Task Volume</h3>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={monthlyData}>
+                  <XAxis dataKey="name" tick={{fontSize:12}} />
+                  <YAxis tick={{fontSize:12}} />
+                  <Tooltip />
+                  <Bar dataKey="tasks" fill="#0073ea" radius={[3,3,0,0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+            {/* Status Distribution */}
+            <div className="metric-card">
+              <h3 style={{fontSize:15,fontWeight:600,color:"#323338",marginBottom:16}}>Status Distribution</h3>
+              <ResponsiveContainer width="100%" height={220}>
+                <PieChart>
+                  <Pie data={statusData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2}>
+                    {statusData.map((e,i) => <Cell key={i} fill={e.color} />)}
+                  </Pie>
+                  <Tooltip />
+                  <Legend iconType="circle" wrapperStyle={{fontSize:12}} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Upcoming Deadlines */}
+            <div className="metric-card">
+              <h3 style={{fontSize:15,fontWeight:600,color:"#323338",marginBottom:16}}>Upcoming Deadlines</h3>
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {upcoming.map(t => (
+                  <div key={t.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",background:"#f6f7fb",borderRadius:6}}>
+                    <span className="owner-avatar" style={{background:ownerColor(t.owner),width:24,height:24,fontSize:9}}>{getInitials(t.owner)}</span>
+                    <div style={{flex:1,overflow:"hidden"}}>
+                      <div style={{fontSize:13,fontWeight:500,color:"#323338",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.title}</div>
+                      <div style={{fontSize:11,color:"#676879"}}>{t.boardName}</div>
+                    </div>
+                    <span style={{fontSize:12,color:"#676879",whiteSpace:"nowrap"}}>{fmtDate(t.dueDate)}</span>
+                  </div>
+                ))}
+                {upcoming.length === 0 && <div style={{fontSize:13,color:"#676879",textAlign:"center",padding:20}}>No upcoming deadlines</div>}
               </div>
             </div>
           </div>
-        );
+        </div>
+      );
+    }
+
+    // ===================== ITEM DETAIL PANEL =====================
+    function ItemDetailPanel({ task, onClose, onUpdate, onDelete, tasks }) {
+      const [activeTab, setActiveTab] = useState("updates");
+      const [commentText, setCommentText] = useState("");
+      const [activity, setActivity] = useState([]);
+      const [loadingActivity, setLoadingActivity] = useState(false);
+
+      const fetchActivity = useCallback(async () => {
+        if (!task) return;
+        setLoadingActivity(true);
+        try {
+          const res = await fetch(`${API}/tasks/${task.id}/activity`);
+          if (res.ok) setActivity(await res.json());
+        } catch(e) { console.error(e); }
+        setLoadingActivity(false);
+      }, [task]);
+
+      useEffect(() => { fetchActivity(); }, [fetchActivity]);
+
+      const submitComment = async () => {
+        if (!commentText.trim()) return;
+        try {
+          await fetch(`${API}/tasks/${task.id}/comments`, {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({ text: commentText, author: "User" }),
+          });
+          setCommentText("");
+          fetchActivity();
+        } catch(e) { console.error(e); }
+      };
+
+      if (!task) return null;
+      const sMeta = STATUS_MAP[task.status] || STATUS_MAP.not_started;
+      const pMeta = PRIORITY_MAP[task.priority] || PRIORITY_MAP.medium;
+      const comments = activity.filter(a => a.type === "comment");
+      const changes = activity.filter(a => a.type === "field_change");
+
+      return (
+        <React.Fragment>
+          {/* Overlay */}
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.3)",zIndex:90}} onClick={onClose} className="fade-enter" />
+          {/* Panel */}
+          <div className="detail-panel">
+            {/* Header */}
+            <div style={{padding:"16px 20px",borderBottom:"1px solid #e6e9ef",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
+              <div style={{fontSize:12,color:"#676879"}}>{task.boardName}</div>
+              <div style={{display:"flex",gap:8}}>
+                <button onClick={() => onDelete(task.id)} style={{background:"none",border:"none",cursor:"pointer",padding:4,borderRadius:4,color:"#676879"}} title="Delete">
+                  <IcoTrash size={16} />
+                </button>
+                <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",padding:4,borderRadius:4,color:"#676879"}}>
+                  <IcoX size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Title */}
+            <div style={{padding:"16px 20px 0 20px",flexShrink:0}}>
+              <h2 style={{fontSize:20,fontWeight:600,color:"#323338",margin:0,lineHeight:1.4}}>{task.title}</h2>
+            </div>
+
+            {/* Properties grid */}
+            <div style={{padding:"16px 20px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,flexShrink:0}}>
+              <div>
+                <label style={{fontSize:11,fontWeight:600,color:"#676879",textTransform:"uppercase",letterSpacing:"0.5px",display:"block",marginBottom:4}}>Status</label>
+                <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                  {STATUS_ORDER.map(s => (
+                    <button key={s} onClick={() => onUpdate(task.id, {status:s})}
+                      style={{padding:"4px 10px",borderRadius:4,fontSize:12,fontWeight:500,border:"none",cursor:"pointer",
+                        background: task.status === s ? STATUS_MAP[s].color : "#e6e9ef",
+                        color: task.status === s ? "#fff" : "#676879",
+                      }}>
+                      {STATUS_MAP[s].label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label style={{fontSize:11,fontWeight:600,color:"#676879",textTransform:"uppercase",letterSpacing:"0.5px",display:"block",marginBottom:4}}>Priority</label>
+                <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                  {["critical","high","medium","low"].map(p => (
+                    <button key={p} onClick={() => onUpdate(task.id, {priority:p})}
+                      style={{padding:"4px 10px",borderRadius:4,fontSize:12,fontWeight:500,border:"none",cursor:"pointer",
+                        background: task.priority === p ? PRIORITY_MAP[p].color : "#e6e9ef",
+                        color: task.priority === p ? "#fff" : "#676879",
+                      }}>
+                      {PRIORITY_MAP[p].label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label style={{fontSize:11,fontWeight:600,color:"#676879",textTransform:"uppercase",letterSpacing:"0.5px",display:"block",marginBottom:4}}>Owner</label>
+                <select value={task.owner} onChange={e => onUpdate(task.id, {owner:e.target.value})}
+                  style={{padding:"6px 8px",border:"1px solid #c3c6d4",borderRadius:4,fontSize:13,fontFamily:"inherit",width:"100%",background:"#fff",cursor:"pointer"}}>
+                  {OWNERS.map(o => <option key={o} value={o}>{o}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{fontSize:11,fontWeight:600,color:"#676879",textTransform:"uppercase",letterSpacing:"0.5px",display:"block",marginBottom:4}}>Due Date</label>
+                <input type="date" value={task.dueDate?.split("T")[0] || ""} onChange={e => onUpdate(task.id, {dueDate:e.target.value})}
+                  style={{padding:"6px 8px",border:"1px solid #c3c6d4",borderRadius:4,fontSize:13,fontFamily:"inherit",width:"100%"}} />
+              </div>
+            </div>
+
+            {/* Tabs */}
+            <div style={{display:"flex",gap:0,borderBottom:"1px solid #e6e9ef",padding:"0 20px",flexShrink:0}}>
+              {[
+                { id: "updates", label: "Updates", icon: IcoMsg },
+                { id: "activity", label: "Activity Log", icon: IcoActivity },
+              ].map(tab => (
+                <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                  style={{padding:"10px 16px",fontSize:13,fontWeight:500,cursor:"pointer",border:"none",background:"none",
+                    borderBottom: activeTab === tab.id ? "2px solid #0073ea" : "2px solid transparent",
+                    color: activeTab === tab.id ? "#0073ea" : "#676879",
+                    display:"flex",alignItems:"center",gap:6,
+                  }}>
+                  <tab.icon size={14} /> {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Tab content */}
+            <div style={{flex:1,overflow:"auto",padding:20}}>
+              {activeTab === "updates" && (
+                <div>
+                  {/* Comment input */}
+                  <div style={{marginBottom:16}}>
+                    <div style={{border:"1px solid #c3c6d4",borderRadius:8,overflow:"hidden"}}>
+                      <textarea value={commentText} onChange={e => setCommentText(e.target.value)}
+                        placeholder="Write an update..."
+                        style={{width:"100%",padding:"10px 12px",border:"none",outline:"none",resize:"none",fontSize:13,fontFamily:"inherit",minHeight:60}} />
+                      <div style={{display:"flex",justifyContent:"flex-end",padding:"6px 8px",borderTop:"1px solid #e6e9ef",background:"#f6f7fb"}}>
+                        <button onClick={submitComment} disabled={!commentText.trim()}
+                          style={{padding:"5px 14px",background:commentText.trim()?"#0073ea":"#c3c6d4",color:"#fff",border:"none",borderRadius:4,fontSize:12,fontWeight:500,cursor:commentText.trim()?"pointer":"default",display:"flex",alignItems:"center",gap:4}}>
+                          <IcoSend size={12} /> Update
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Comments list */}
+                  {comments.length === 0 && <div style={{textAlign:"center",padding:20,color:"#676879",fontSize:13}}>No updates yet. Be the first to post!</div>}
+                  {comments.map((c, i) => (
+                    <div key={i} style={{marginBottom:12,padding:12,background:"#f6f7fb",borderRadius:8}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+                        <span className="owner-avatar" style={{background:"#0073ea",width:28,height:28,fontSize:11}}>{getInitials(c.author || "User")}</span>
+                        <div>
+                          <span style={{fontSize:13,fontWeight:600,color:"#323338"}}>{c.author || "User"}</span>
+                          <span style={{fontSize:11,color:"#676879",marginLeft:8}}>{fmtDateFull(c.timestamp)} {fmtTime(c.timestamp)}</span>
+                        </div>
+                      </div>
+                      <div style={{fontSize:13,color:"#323338",lineHeight:1.5,paddingLeft:36}}>{c.text}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {activeTab === "activity" && (
+                <div>
+                  {changes.length === 0 && <div style={{textAlign:"center",padding:20,color:"#676879",fontSize:13}}>No activity logged yet</div>}
+                  {changes.map((a, i) => {
+                    const fieldLabel = { status: "Status", owner: "Owner", priority: "Priority", dueDate: "Due Date", title: "Title" }[a.field] || a.field;
+                    const oldDisplay = a.field === "status" ? (STATUS_MAP[a.oldValue]?.label || a.oldValue) :
+                                       a.field === "priority" ? (PRIORITY_MAP[a.oldValue]?.label || a.oldValue) : (a.oldValue || "(empty)");
+                    const newDisplay = a.field === "status" ? (STATUS_MAP[a.newValue]?.label || a.newValue) :
+                                       a.field === "priority" ? (PRIORITY_MAP[a.newValue]?.label || a.newValue) : a.newValue;
+                    return (
+                      <div key={i} style={{display:"flex",gap:12,padding:"10px 0",borderBottom:"1px solid #e6e9ef"}}>
+                        <div style={{width:6,borderRadius:3,background:"#c3c6d4",flexShrink:0}}></div>
+                        <div>
+                          <div style={{fontSize:13,color:"#323338"}}>
+                            <strong>{fieldLabel}</strong> changed from <span style={{textDecoration:"line-through",color:"#676879"}}>{oldDisplay}</span> to <strong>{newDisplay}</strong>
+                          </div>
+                          <div style={{fontSize:11,color:"#676879",marginTop:2}}>{fmtDateFull(a.timestamp)} {fmtTime(a.timestamp)}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </React.Fragment>
+      );
+    }
+
+    // ===================== ADD TASK MODAL =====================
+    function AddTaskModal({ boardId, boardName, domainId, domainName, onClose, onCreate }) {
+      const [title, setTitle] = useState("");
+      const [owner, setOwner] = useState("Analyst");
+      const [priority, setPriority] = useState("medium");
+      const [dueDate, setDueDate] = useState(new Date().toISOString().split("T")[0]);
+      const [month, setMonth] = useState(String(new Date().getMonth() + 1));
+
+      const handleCreate = () => {
+        if (!title.trim()) return;
+        onCreate({ title, owner, priority, dueDate, month: parseInt(month), status: "not_started", boardId, boardName, domainId, domainName, notes: "" });
+      };
+
+      return (
+        <React.Fragment>
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.35)",zIndex:100}} onClick={onClose} className="fade-enter" />
+          <div style={{position:"fixed",top:"50%",left:"50%",transform:"translate(-50%,-50%)",background:"#fff",borderRadius:12,padding:24,width:440,zIndex:110,boxShadow:"0 12px 40px rgba(0,0,0,0.2)"}} className="fade-enter" onClick={e => e.stopPropagation()}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+              <h3 style={{fontSize:18,fontWeight:600,color:"#323338",margin:0}}>New Task</h3>
+              <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",padding:4}}><IcoX size={18} color="#676879" /></button>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:14}}>
+              <div>
+                <label style={{fontSize:12,fontWeight:600,color:"#676879",display:"block",marginBottom:4}}>Task Title *</label>
+                <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="What needs to be done?"
+                  autoFocus style={{width:"100%",padding:"8px 12px",border:"1px solid #c3c6d4",borderRadius:6,fontSize:14,fontFamily:"inherit",outline:"none"}} />
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                <div>
+                  <label style={{fontSize:12,fontWeight:600,color:"#676879",display:"block",marginBottom:4}}>Owner</label>
+                  <select value={owner} onChange={e => setOwner(e.target.value)} style={{width:"100%",padding:"8px",border:"1px solid #c3c6d4",borderRadius:6,fontSize:13,fontFamily:"inherit"}}>
+                    {OWNERS.map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{fontSize:12,fontWeight:600,color:"#676879",display:"block",marginBottom:4}}>Priority</label>
+                  <select value={priority} onChange={e => setPriority(e.target.value)} style={{width:"100%",padding:"8px",border:"1px solid #c3c6d4",borderRadius:6,fontSize:13,fontFamily:"inherit"}}>
+                    {["critical","high","medium","low"].map(p => <option key={p} value={p}>{PRIORITY_MAP[p].label}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                <div>
+                  <label style={{fontSize:12,fontWeight:600,color:"#676879",display:"block",marginBottom:4}}>Due Date</label>
+                  <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} style={{width:"100%",padding:"8px",border:"1px solid #c3c6d4",borderRadius:6,fontSize:13,fontFamily:"inherit"}} />
+                </div>
+                <div>
+                  <label style={{fontSize:12,fontWeight:600,color:"#676879",display:"block",marginBottom:4}}>Month</label>
+                  <select value={month} onChange={e => setMonth(e.target.value)} style={{width:"100%",padding:"8px",border:"1px solid #c3c6d4",borderRadius:6,fontSize:13,fontFamily:"inherit"}}>
+                    {MONTHS.map((m,i) => <option key={i} value={i+1}>{m}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div style={{display:"flex",gap:10,marginTop:6}}>
+                <button onClick={handleCreate}
+                  style={{flex:1,padding:"10px",background:"#0073ea",color:"#fff",border:"none",borderRadius:6,fontSize:14,fontWeight:600,cursor:"pointer"}}>
+                  Add Task
+                </button>
+                <button onClick={onClose}
+                  style={{flex:1,padding:"10px",background:"#e6e9ef",color:"#323338",border:"none",borderRadius:6,fontSize:14,fontWeight:500,cursor:"pointer"}}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </React.Fragment>
+      );
+    }
+
+    // ===================== MAIN APP =====================
+    function App() {
+      // State
+      const [tasks, setTasks] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [currentBoard, setCurrentBoard] = useState(null); // null = "All Tasks" / Dashboard
+      const [currentView, setCurrentView] = useState("table"); // table | kanban | calendar | dashboard
+      const [selectedTask, setSelectedTask] = useState(null);
+      const [addTaskModal, setAddTaskModal] = useState(null); // { boardId, boardName, domainId, domainName }
+      const [toast, setToast] = useState(null);
+      const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+      const [expandedDomains, setExpandedDomains] = useState({"base-pay": true, "variable-pay": true, "exec-comp": true});
+      const [searchQuery, setSearchQuery] = useState("");
+      const [filters, setFilters] = useState({ status: null, priority: null, owner: null });
+      const [sidebarSearch, setSidebarSearch] = useState("");
+
+      // Fetch
+      const fetchTasks = useCallback(async () => {
+        try {
+          const res = await fetch(`${API}/tasks`);
+          if (!res.ok) throw new Error();
+          setTasks(await res.json());
+        } catch(e) { setToast({ message: "Failed to load tasks", type: "error" }); }
+        finally { setLoading(false); }
+      }, []);
+
+      useEffect(() => { fetchTasks(); const iv = setInterval(fetchTasks, 5000); return () => clearInterval(iv); }, [fetchTasks]);
+
+      // Mutations
+      const updateTask = useCallback(async (id, updates) => {
+        // Optimistic update
+        setTasks(prev => prev.map(t => t.id === id ? {...t, ...updates, updatedAt: new Date().toISOString()} : t));
+        if (selectedTask && selectedTask.id === id) {
+          setSelectedTask(prev => prev ? {...prev, ...updates} : prev);
+        }
+        try {
+          const res = await fetch(`${API}/tasks/${id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body: JSON.stringify(updates) });
+          if (!res.ok) throw new Error();
+        } catch(e) { setToast({ message: "Failed to update", type: "error" }); fetchTasks(); }
+      }, [fetchTasks, selectedTask]);
+
+      const deleteTask = useCallback(async (id) => {
+        if (!window.confirm("Delete this task?")) return;
+        try {
+          const res = await fetch(`${API}/tasks/${id}`, { method:"DELETE" });
+          if (!res.ok) throw new Error();
+          setSelectedTask(null);
+          fetchTasks();
+          setToast({ message: "Task deleted", type: "success" });
+        } catch(e) { setToast({ message: "Failed to delete", type: "error" }); }
+      }, [fetchTasks]);
+
+      const createTask = useCallback(async (t) => {
+        try {
+          const res = await fetch(`${API}/tasks`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(t) });
+          if (!res.ok) throw new Error();
+          setAddTaskModal(null);
+          fetchTasks();
+          setToast({ message: "Task created", type: "success" });
+        } catch(e) { setToast({ message: "Failed to create", type: "error" }); }
+      }, [fetchTasks]);
+
+      const resetAll = useCallback(async () => {
+        if (!window.confirm("Reset all tasks to defaults? This removes all custom changes.")) return;
+        try {
+          await fetch(`${API}/seed`, { method:"POST" });
+          fetchTasks();
+          setToast({ message: "Reset complete", type: "success" });
+        } catch(e) { setToast({ message: "Reset failed", type: "error" }); }
+      }, [fetchTasks]);
+
+      // Board helpers
+      const boardMeta = currentBoard ? BOARDS.find(b => b.id === currentBoard) : null;
+      const domainMeta = boardMeta ? DOMAIN_META[boardMeta.domain] : null;
+
+      const boardTaskCount = (boardId) => tasks.filter(t => t.boardId === boardId).length;
+      const boardDoneCount = (boardId) => tasks.filter(t => t.boardId === boardId && t.status === "complete").length;
+
+      // Filtered boards for sidebar search
+      const filteredBoards = useMemo(() => {
+        if (!sidebarSearch) return BOARDS;
+        return BOARDS.filter(b => b.name.toLowerCase().includes(sidebarSearch.toLowerCase()));
+      }, [sidebarSearch]);
+
+      const handleSelectTask = (task) => {
+        setSelectedTask({...task});
+      };
+
+      const handleAddTask = () => {
+        if (boardMeta) {
+          setAddTaskModal({ boardId: boardMeta.id, boardName: boardMeta.name, domainId: boardMeta.domain, domainName: DOMAIN_META[boardMeta.domain].name });
+        } else {
+          // Default to first board
+          const b = BOARDS[0];
+          setAddTaskModal({ boardId: b.id, boardName: b.name, domainId: b.domain, domainName: DOMAIN_META[b.domain].name });
+        }
       };
 
       if (loading) {
         return (
-          <div className="flex items-center justify-center h-screen bg-gray-50">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading tasks...</p>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",background:"#f6f7fb"}}>
+            <div style={{textAlign:"center"}}>
+              <div style={{width:40,height:40,border:"3px solid #e6e9ef",borderTopColor:"#0073ea",borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto 16px"}}></div>
+              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+              <p style={{color:"#676879",fontSize:14}}>Loading CompHub...</p>
             </div>
           </div>
         );
       }
 
       return (
-        <div className="flex h-screen bg-gray-50">
-          {/* Sidebar */}
-          <div className="w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white flex flex-col">
-            <div className="p-6 border-b border-slate-700">
-              <h1 className="text-xl font-bold flex items-center gap-2">
-                <DollarSign size={24} /> CompHub
-              </h1>
-              <p className="text-sm text-slate-400 mt-1">Comp Ops Center</p>
-            </div>
-
-            <nav className="flex-1 overflow-y-auto p-4 space-y-2">
-              {[
-                { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-                { id: "all-tasks", label: "All Tasks", icon: List },
-                { id: "calendar", label: "Calendar", icon: Calendar },
-                { id: "templates", label: "Templates", icon: Layers },
-              ].map(item => (
-                <button
-                  key={item.id}
-                  onClick={() => setView(item.id)}
-                  className={`w-full px-4 py-3 rounded-lg flex items-center gap-3 text-sm font-medium transition ${
-                    view === item.id ? "bg-blue-600 text-white" : "text-slate-300 hover:bg-slate-700"
-                  }`}
-                >
-                  <item.icon size={18} /> {item.label}
-                </button>
-              ))}
-            </nav>
-
-            <div className="p-4 border-t border-slate-700">
-              <button
-                onClick={resetToTemplate}
-                className="w-full px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
-              >
-                <RefreshCw size={16} /> Reset to Defaults
+        <div style={{display:"flex",height:"100vh",overflow:"hidden"}}>
+          {/* ===== SIDEBAR ===== */}
+          <div style={{width: sidebarCollapsed ? 48 : 260, background:"#292f4c", color:"#fff", display:"flex", flexDirection:"column", transition:"width 0.2s", flexShrink:0, overflow:"hidden"}}>
+            {/* Logo */}
+            <div style={{padding: sidebarCollapsed ? "16px 8px" : "16px 16px", borderBottom:"1px solid rgba(255,255,255,0.08)", display:"flex", alignItems:"center", gap:10, minHeight:56}}>
+              {!sidebarCollapsed && (
+                <React.Fragment>
+                  <div style={{width:32,height:32,borderRadius:8,background:"#0073ea",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:14}}>C</div>
+                  <div>
+                    <div style={{fontSize:15,fontWeight:700}}>CompHub</div>
+                    <div style={{fontSize:10,color:"#9699a8"}}>Comp Ops Center</div>
+                  </div>
+                </React.Fragment>
+              )}
+              <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                style={{marginLeft:"auto",background:"none",border:"none",cursor:"pointer",padding:4,borderRadius:4,color:"#9699a8",display:"flex"}}>
+                <IcoMenu size={16} />
               </button>
             </div>
+
+            {!sidebarCollapsed && (
+              <React.Fragment>
+                {/* Sidebar search */}
+                <div style={{padding:"12px 12px 8px 12px"}}>
+                  <div style={{position:"relative"}}>
+                    <input type="text" placeholder="Search boards..." value={sidebarSearch} onChange={e => setSidebarSearch(e.target.value)}
+                      style={{width:"100%",padding:"6px 10px 6px 30px",background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:4,fontSize:12,color:"#fff",outline:"none",fontFamily:"inherit"}} />
+                    <IcoSearch size={13} color="#9699a8" className="" />
+                    <div style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}}></div>
+                  </div>
+                </div>
+
+                {/* Home / Dashboard */}
+                <div style={{padding:"4px 12px"}}>
+                  <div className={`sidebar-board-item ${!currentBoard && currentView === "dashboard" ? "active" : ""}`}
+                    style={{paddingLeft:12}} onClick={() => { setCurrentBoard(null); setCurrentView("dashboard"); }}>
+                    <IcoHome size={14} /> Dashboard
+                  </div>
+                  <div className={`sidebar-board-item ${!currentBoard && currentView === "table" ? "active" : ""}`}
+                    style={{paddingLeft:12}} onClick={() => { setCurrentBoard(null); setCurrentView("table"); }}>
+                    <IcoTable size={14} /> All Tasks
+                  </div>
+                </div>
+
+                {/* Domain sections */}
+                <div style={{flex:1,overflow:"auto",padding:"8px 12px"}}>
+                  {Object.entries(DOMAIN_META).map(([domainId, meta]) => {
+                    const domainBoards = filteredBoards.filter(b => b.domain === domainId);
+                    if (sidebarSearch && domainBoards.length === 0) return null;
+                    const expanded = expandedDomains[domainId];
+                    return (
+                      <div key={domainId} style={{marginBottom:4}}>
+                        <div className="sidebar-domain-header" onClick={() => setExpandedDomains(prev => ({...prev, [domainId]: !prev[domainId]}))}>
+                          <span style={{transform: expanded ? "rotate(0deg)" : "rotate(-90deg)", transition:"transform 0.15s", display:"flex"}}>
+                            <IcoChevDown size={12} color="#9699a8" />
+                          </span>
+                          <span style={{width:8,height:8,borderRadius:2,background:meta.color,flexShrink:0}}></span>
+                          <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{meta.name}</span>
+                        </div>
+                        {expanded && domainBoards.map(board => {
+                          const count = boardTaskCount(board.id);
+                          const doneC = boardDoneCount(board.id);
+                          return (
+                            <div key={board.id} className={`sidebar-board-item ${currentBoard === board.id ? "active" : ""}`}
+                              onClick={() => { setCurrentBoard(board.id); if(currentView === "dashboard") setCurrentView("table"); }}>
+                              <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis"}}>{board.name}</span>
+                              <span style={{fontSize:10,color:"#9699a8",flexShrink:0}}>{doneC}/{count}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Bottom actions */}
+                <div style={{padding:12,borderTop:"1px solid rgba(255,255,255,0.08)"}}>
+                  <button onClick={resetAll}
+                    style={{width:"100%",padding:"8px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:4,color:"#9699a8",fontSize:12,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                    <IcoRefresh size={13} /> Reset to Defaults
+                  </button>
+                </div>
+              </React.Fragment>
+            )}
           </div>
 
-          {/* Main Content */}
-          <div className="flex-1 flex flex-col">
-            <header className="bg-white border-b border-gray-200 px-8 py-6 flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {view === "dashboard" && "Dashboard"}
-                  {view === "all-tasks" && "All Tasks"}
-                  {view === "calendar" && "Calendar"}
-                  {view === "templates" && "Templates"}
-                </h2>
+          {/* ===== MAIN AREA ===== */}
+          <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+            {/* Top bar */}
+            <div style={{background:"#fff",borderBottom:"1px solid #e6e9ef",padding:"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+              <div style={{display:"flex",alignItems:"center",gap:12}}>
+                {boardMeta && (
+                  <span style={{width:10,height:10,borderRadius:3,background:domainMeta?.color || "#888"}}></span>
+                )}
+                <h1 style={{fontSize:20,fontWeight:700,color:"#323338",margin:0}}>
+                  {boardMeta ? boardMeta.name : (currentView === "dashboard" ? "Dashboard" : "All Tasks")}
+                </h1>
+                {boardMeta && (
+                  <span style={{fontSize:12,color:"#676879",background:"#e6e9ef",padding:"2px 8px",borderRadius:4}}>
+                    {boardTaskCount(boardMeta.id)} tasks
+                  </span>
+                )}
               </div>
-              <div className="flex items-center gap-4">
-                <button className="p-2 hover:bg-gray-100 rounded-lg" onClick={fetchTasks} title="Refresh">
-                  <RefreshCw size={20} color="currentColor" />
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                {/* View tabs */}
+                {["table","kanban","calendar","dashboard"].map(v => {
+                  const icons = { table: IcoTable, kanban: IcoKanban, calendar: IcoCal, dashboard: IcoDash };
+                  const labels = { table: "Table", kanban: "Kanban", calendar: "Calendar", dashboard: "Dashboard" };
+                  const Ico = icons[v];
+                  return (
+                    <button key={v} className={`view-tab ${currentView === v ? "active" : ""}`} onClick={() => setCurrentView(v)}>
+                      <span style={{display:"flex",alignItems:"center",gap:5}}><Ico size={14} /> {labels[v]}</span>
+                    </button>
+                  );
+                })}
+                <div style={{width:1,height:24,background:"#e6e9ef",margin:"0 4px"}}></div>
+                <button onClick={handleAddTask}
+                  style={{padding:"7px 16px",background:"#0073ea",color:"#fff",border:"none",borderRadius:4,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:5,fontFamily:"inherit"}}>
+                  <IcoPlus size={14} color="#fff" /> New Task
                 </button>
               </div>
-            </header>
+            </div>
 
-            <main className="flex-1 overflow-y-auto p-8">
-              {view === "dashboard" && <DashboardView />}
-              {view === "all-tasks" && <AllTasksView />}
-              {view === "calendar" && <CalendarView />}
-              {view === "templates" && <TemplatesView />}
-              {selectedBoard && <BoardDetailView />}
-            </main>
+            {/* Board progress bar (for specific boards) */}
+            {boardMeta && (
+              <div style={{padding:"0 24px",background:"#fff",paddingBottom:8}}>
+                <div style={{display:"flex",alignItems:"center",gap:12}}>
+                  <div style={{flex:1,height:4,background:"#e6e9ef",borderRadius:2,overflow:"hidden"}}>
+                    <div style={{height:"100%",background:domainMeta?.color||"#0073ea",width:`${boardTaskCount(boardMeta.id) > 0 ? (boardDoneCount(boardMeta.id)/boardTaskCount(boardMeta.id))*100 : 0}%`,borderRadius:2,transition:"width 0.3s"}}></div>
+                  </div>
+                  <span style={{fontSize:12,color:"#676879",flexShrink:0}}>{boardDoneCount(boardMeta.id)}/{boardTaskCount(boardMeta.id)} done</span>
+                </div>
+              </div>
+            )}
+
+            {/* Content area */}
+            <div style={{flex:1,overflow:"auto",padding:24}}>
+              {currentView === "dashboard" && <DashboardView tasks={currentBoard ? tasks.filter(t => t.boardId === currentBoard) : tasks} />}
+              {currentView === "table" && (
+                <TableView tasks={tasks} onUpdate={updateTask} onDelete={deleteTask} onSelectTask={handleSelectTask}
+                  searchQuery={searchQuery} setSearchQuery={setSearchQuery} filters={filters} setFilters={setFilters}
+                  boardId={currentBoard} />
+              )}
+              {currentView === "kanban" && <KanbanView tasks={tasks} onUpdate={updateTask} onSelectTask={handleSelectTask} boardId={currentBoard} />}
+              {currentView === "calendar" && <CalendarView tasks={tasks} boardId={currentBoard} />}
+            </div>
           </div>
 
-          {/* Task Detail Modal */}
-          {selectedTask && <TaskDetailModal task={selectedTask} onClose={() => setSelectedTask(null)} onUpdate={updateTask} onDelete={deleteTask} />}
+          {/* Detail Panel */}
+          {selectedTask && (
+            <ItemDetailPanel task={selectedTask} onClose={() => setSelectedTask(null)} onUpdate={updateTask} onDelete={deleteTask} tasks={tasks} />
+          )}
 
           {/* Add Task Modal */}
-          {addTaskBoard && <AddTaskModal boardId={addTaskBoard} onClose={() => setAddTaskBoard(null)} onCreate={createTask} />}
+          {addTaskModal && (
+            <AddTaskModal {...addTaskModal} onClose={() => setAddTaskModal(null)} onCreate={createTask} />
+          )}
 
           {/* Toast */}
           {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
@@ -744,267 +1237,9 @@
       );
     }
 
-    // ==================== HELPER COMPONENTS ====================
-
-    function MetricCard({ label, value, icon, color }) {
-      return (
-        <div className={`${color} rounded-lg p-6 border border-gray-200`}>
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-gray-600 text-sm font-medium">{label}</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{value}</p>
-            </div>
-            <div className="text-gray-400">{icon}</div>
-          </div>
-        </div>
-      );
-    }
-
-    function TaskDetailModal({ task, onClose, onUpdate, onDelete }) {
-      const [editMode, setEditMode] = useState(false);
-      const [owner, setOwner] = useState(task.owner);
-      const [priority, setPriority] = useState(task.priority);
-      const [dueDate, setDueDate] = useState(task.dueDate.split("T")[0]);
-      const [notes, setNotes] = useState(task.notes || "");
-
-      const handleSave = () => {
-        onUpdate(task.id, { owner, priority, dueDate, notes });
-        setEditMode(false);
-      };
-
-      const statusMeta = STATUSES.find(s => s.id === task.status);
-      const priorityMeta = PRIORITIES.find(p => p.id === task.priority);
-      const boardMeta = BOARDS.find(b => b.id === task.boardId);
-
-      return (
-        <div className="fixed inset-0 modal-overlay z-40" onClick={onClose}>
-          <div className="fixed right-0 top-0 bottom-0 w-96 bg-white shadow-lg overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="p-6 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white">
-              <h3 className="text-lg font-bold text-gray-900">Task Details</h3>
-              <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
-                <X size={20} color="currentColor" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-6">
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">{task.title}</h4>
-                <p className="text-sm text-gray-600">{task.boardName}</p>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700 block mb-2">Status</label>
-                <div className="flex flex-wrap gap-2">
-                  {STATUSES.map(s => (
-                    <button
-                      key={s.id}
-                      onClick={() => onUpdate(task.id, { status: s.id })}
-                      className="px-3 py-2 rounded text-xs font-medium transition"
-                      style={{
-                        backgroundColor: task.status === s.id ? s.color : s.bg,
-                        color: task.status === s.id ? "white" : s.color,
-                      }}
-                    >
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {editMode ? (
-                <>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 block mb-2">Owner</label>
-                    <select value={owner} onChange={e => setOwner(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                      {OWNERS.map(o => <option key={o} value={o}>{o}</option>)}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 block mb-2">Priority</label>
-                    <select value={priority} onChange={e => setPriority(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                      {PRIORITIES.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 block mb-2">Due Date</label>
-                    <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 block mb-2">Notes</label>
-                    <textarea value={notes} onChange={e => setNotes(e.target.value)} rows="3" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-sans"></textarea>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button onClick={handleSave} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm flex items-center justify-center gap-2">
-                      <Save size={16} /> Save Changes
-                    </button>
-                    <button onClick={() => setEditMode(false)} className="flex-1 px-4 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 font-medium text-sm">
-                      Cancel
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-600 mb-1">Owner</p>
-                      <p className="font-medium text-gray-900">{task.owner}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600 mb-1">Priority</p>
-                      <span className="px-2 py-1 rounded text-xs font-medium" style={{backgroundColor: priorityMeta.color + "20", color: priorityMeta.color}}>
-                        {priorityMeta.label}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-gray-600 mb-1">Due Date</p>
-                      <p className="font-medium text-gray-900">{new Date(task.dueDate).toLocaleDateString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600 mb-1">Month</p>
-                      <p className="font-medium text-gray-900">{MONTHS[task.month - 1]}</p>
-                    </div>
-                  </div>
-
-                  {task.notes && (
-                    <div>
-                      <p className="text-sm text-gray-600 mb-2">Notes</p>
-                      <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded border border-gray-200">{task.notes}</p>
-                    </div>
-                  )}
-
-                  <div className="flex gap-2">
-                    <button onClick={() => setEditMode(true)} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm flex items-center justify-center gap-2">
-                      <Edit3 size={16} /> Edit
-                    </button>
-                    <button onClick={() => onDelete(task.id)} className="flex-1 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 font-medium text-sm flex items-center justify-center gap-2">
-                      <Trash2 size={16} /> Delete
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    function AddTaskModal({ boardId, onClose, onCreate }) {
-      const [title, setTitle] = useState("");
-      const [owner, setOwner] = useState("Analyst");
-      const [priority, setPriority] = useState("medium");
-      const [month, setMonth] = useState("1");
-      const [dueDate, setDueDate] = useState(new Date().toISOString().split("T")[0]);
-      const [notes, setNotes] = useState("");
-
-      const board = BOARDS.find(b => b.id === boardId);
-
-      const handleCreate = () => {
-        if (!title.trim()) return;
-        onCreate({
-          title,
-          owner,
-          priority,
-          month: parseInt(month),
-          dueDate,
-          notes,
-          status: "not_started",
-          boardId,
-          boardName: board.name,
-          domainId: board.domain,
-          domainName: DOMAIN_META[board.domain].name,
-        });
-      };
-
-      return (
-        <div className="fixed inset-0 modal-overlay z-40 flex items-center justify-center" onClick={onClose}>
-          <div className="bg-white rounded-lg shadow-lg p-6 w-96" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Add Task to {board.name}</h3>
-              <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
-                <X size={20} color="currentColor" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-gray-700 block mb-1">Title *</label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
-                  placeholder="Task title"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-700 block mb-1">Owner</label>
-                  <select value={owner} onChange={e => setOwner(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                    {OWNERS.map(o => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700 block mb-1">Priority</label>
-                  <select value={priority} onChange={e => setPriority(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                    {PRIORITIES.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-700 block mb-1">Month</label>
-                  <select value={month} onChange={e => setMonth(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                    {MONTHS.map((m, idx) => <option key={idx} value={idx + 1}>{m}</option>)}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700 block mb-1">Due Date</label>
-                  <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700 block mb-1">Notes</label>
-                <textarea
-                  value={notes}
-                  onChange={e => setNotes(e.target.value)}
-                  placeholder="Optional notes..."
-                  rows="3"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-sans"
-                ></textarea>
-              </div>
-
-              <div className="flex gap-2 pt-4">
-                <button
-                  onClick={handleCreate}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm"
-                >
-                  Create Task
-                </button>
-                <button
-                  onClick={onClose}
-                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 font-medium text-sm"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // Render the app
+    // ===================== RENDER =====================
     const root = ReactDOM.createRoot(document.getElementById("root"));
-    root.render(<CompTaskHub />);
+    root.render(<App />);
   </script>
 </body>
 </html>
