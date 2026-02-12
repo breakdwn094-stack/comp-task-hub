@@ -1,0 +1,16 @@
+{
+  "name": "comp-task-hub",
+  "version": "1.0.0",
+  "description": "CompHub - Compensation Operations Task Management Hub. A fully functional, collaborative task management platform specialized for compensation teams.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node -e \"require('./server'); setTimeout(() => process.exit(), 2000)\""
+  },
+  "keywords": ["compensation", "task-management", "hr", "total-rewards"],
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "express": "^4.21.0"
+  }
+}

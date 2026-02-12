@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CompHub - Compensation Operations Hub</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/prop-types@15/prop-types.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/recharts@2.10.3/umd/Recharts.js"></script>
+  <style>
+    html, body, #root { margin: 0; padding: 0; height: 100%; font-family: system-ui, -apple-system, sans-serif; }
+    .toast-enter { animation: slideIn 0.3s ease; }
+    .toast-exit { animation: slideOut 0.3s ease; }
+    @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes slideOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-20px); opacity: 0; } }
+    .modal-overlay { background: rgba(0,0,0,0.5); }
+    .sidebar-domain { cursor: pointer; user-select: none; }
+    .task-row:hover { background-color: #f9fafb; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useMemo, useEffect, useCallback } = React;
+    const { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } = window.Recharts;
+
+    // ==================== ICON HELPERS ====================
+    const mkIcon = (pathData) => ({size=24, className="", color, strokeWidth=2} = {}) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+        fill="none" stroke={color || "currentColor"} strokeWidth={strokeWidth}
+        strokeLinecap="round" strokeLinejoin="round" className={className}
+        style={{display:"inline-block",verticalAlign:"middle"}}
+        dangerouslySetInnerHTML={{__html: pathData}} />
+    );
+
+    const LayoutDashboard = mkIcon(`<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>`);
+    const DollarSign = mkIcon(`<line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>`);
+    const Target = mkIcon(`<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>`);
+    const Briefcase = mkIcon(`<rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>`);
+    const Globe = mkIcon(`<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>`);
+    const Shield = mkIcon(`<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>`);
+    const Settings = mkIcon(`<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>`);
+    const Search = mkIcon(`<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>`);
+    const ChevronRight = mkIcon(`<path d="m9 18 6-6-6-6"/>`);
+    const ChevronDown = mkIcon(`<path d="m6 9 6 6 6-6"/>`);
+    const Calendar = mkIcon(`<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>`);
+    const List = mkIcon(`<line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/>`);
+    const Clock = mkIcon(`<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>`);
+    const AlertTriangle = mkIcon(`<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>`);
+    const CheckCircle2 = mkIcon(`<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>`);
+    const X = mkIcon(`<path d="M18 6 6 18"/><path d="m6 6 12 12"/>`);
+    const TrendingUp = mkIcon(`<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>`);
+    const Layers = mkIcon(`<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22.54 12.43-1.42-.65-8.28 3.78a2 2 0 0 1-1.66 0l-8.29-3.78-1.42.65a1 1 0 0 0 0 1.82l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22.54 16.43-1.42-.65-8.28 3.78a2 2 0 0 1-1.66 0l-8.29-3.78-1.42.65a1 1 0 0 0 0 1.82l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/>`);
+    const BarChart3 = mkIcon(`<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>`);
+    const Plus = mkIcon(`<path d="M5 12h14"/><path d="M12 5v14"/>`);
+    const Trash2 = mkIcon(`<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>`);
+    const Edit3 = mkIcon(`<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>`);
+    const Save = mkIcon(`<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>`);
+    const RefreshCw = mkIcon(`<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>`);
+    const MessageSquare = mkIcon(`<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>`);
+
+    // ==================== CONSTANTS ====================
+    const STATUSES = [
+      { id: "not_started", label: "Not Started", color: "#94A3B8", bg: "#F1F5F9" },
+      { id: "in_progress", label: "In Progress", color: "#3B82F6", bg: "#EFF6FF" },
+      { id: "in_review", label: "In Review", color: "#F59E0B", bg: "#FFFBEB" },
+      { id: "complete", label: "Complete", color: "#10B981", bg: "#ECFDF5" },
+      { id: "blocked", label: "Blocked", color: "#EF4444", bg: "#FEF2F2" },
+    ];
+
+    const PRIORITIES = [
+      { id: "critical", label: "Critical", color: "#EF4444" },
+      { id: "high", label: "High", color: "#F97316" },
+      { id: "medium", label: "Medium", color: "#EAB308" },
+      { id: "low", label: "Low", color: "#6B7280" },
+    ];
+
+    const OWNERS = ["Director","Manager","Sr Analyst","Analyst","Admin","HRBP","Legal","Finance"];
+    const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+    const DOMAIN_META = {
+      "base-pay": { name: "Base Pay & Structures", color: "#3B82F6", icon: "dollar" },
+      "variable-pay": { name: "Variable Pay & Incentives", color: "#10B981", icon: "target" },
+      "exec-comp": { name: "Executive Compensation", color: "#8B5CF6", icon: "briefcase" },
+      "global": { name: "Global / International", color: "#14B8A6", icon: "globe" },
+      "compliance": { name: "Compliance & Governance", color: "#F59E0B", icon: "shield" },
+      "operations": { name: "Operations & Administration", color: "#6366F1", icon: "settings" },
+    };
+
+    const BOARDS = [
+      { id: "salary-structure", name: "Annual Salary Structure Review", domain: "base-pay", cadence: "Annual", desc: "End-to-end review and update of salary ranges, grades, and pay structures to maintain market competitiveness.", taskCount: 8 },
+      { id: "market-pricing", name: "Market Pricing & Benchmarking", domain: "base-pay", cadence: "Annual", desc: "Annual cycle of survey participation, data collection, job matching, and competitive market analysis.", taskCount: 10 },
+      { id: "merit-cycle", name: "Annual Merit Cycle", domain: "base-pay", cadence: "Annual", desc: "Full lifecycle management of the annual merit increase process from planning through post-cycle analysis.", taskCount: 14 },
+      { id: "pay-equity", name: "Pay Equity Analysis", domain: "base-pay", cadence: "Annual", desc: "Statistical analysis of compensation equity across protected classes with remediation planning.", taskCount: 10 },
+      { id: "job-architecture", name: "Job Architecture & Evaluation", domain: "base-pay", cadence: "Annual", desc: "Maintenance and governance of job families, levels, descriptions, and FLSA classifications.", taskCount: 8 },
+      { id: "annual-incentive", name: "Annual Incentive Plan (AIP) Administration", domain: "variable-pay", cadence: "Annual", desc: "Design, execution, and analysis of the short-term annual incentive bonus program.", taskCount: 12 },
+      { id: "sales-comp", name: "Sales Compensation Management", domain: "variable-pay", cadence: "Annual", desc: "Design, administration, and monitoring of sales commission and incentive plans.", taskCount: 10 },
+      { id: "lti-equity", name: "Long-Term Incentive / Equity Administration", domain: "variable-pay", cadence: "Annual", desc: "Administration of equity grants (RSUs, options, PSUs), vesting, exercises, and compliance.", taskCount: 12 },
+      { id: "recognition", name: "Recognition & Spot Awards", domain: "variable-pay", cadence: "Annual", desc: "Design and administration of employee recognition programs and discretionary awards.", taskCount: 6 },
+      { id: "retention", name: "Retention Program Management", domain: "variable-pay", cadence: "Annual", desc: "Identification of flight risks and design/execution of targeted retention strategies.", taskCount: 6 },
+      { id: "exec-annual", name: "Annual Executive Comp Cycle", domain: "exec-comp", cadence: "Annual", desc: "Annual executive compensation benchmarking, recommendation, and approval cycle.", taskCount: 10 },
+      { id: "proxy-cda", name: "Proxy Statement & CD&A", domain: "exec-comp", cadence: "Annual", desc: "Preparation of proxy statement compensation disclosures including CD&A, pay tables, and say-on-pay.", taskCount: 10 },
+      { id: "board-committee", name: "Compensation Committee Governance", domain: "exec-comp", cadence: "Annual", desc: "Compensation committee calendar, meeting preparation, governance compliance, and advisory support.", taskCount: 8 },
+      { id: "director-comp", name: "Board of Directors Compensation", domain: "exec-comp", cadence: "Annual", desc: "Comprehensive director pay program design, benchmarking, equity administration, and regulatory disclosure.", taskCount: 14 },
+      { id: "exec-benefits", name: "Executive Benefits & Perquisites", domain: "exec-comp", cadence: "Annual", desc: "Administration of NQDC plans, SERPs, perquisites, and change-in-control provisions.", taskCount: 8 },
+      { id: "global-structures", name: "Global Pay Structure Management", domain: "global", cadence: "Annual", desc: "Country-specific salary structure review, currency analysis, and global grading harmonization.", taskCount: 8 },
+      { id: "global-mobility", name: "Global Mobility & Expatriate Compensation", domain: "global", cadence: "Annual", desc: "International assignment policy, package design, tax equalization, and allowance benchmarking.", taskCount: 10 },
+      { id: "intl-compliance", name: "International Compliance", domain: "global", cadence: "Annual", desc: "Country labor law monitoring, works council coordination, data privacy, and statutory reporting.", taskCount: 8 },
+      { id: "reg-compliance", name: "Regulatory Compliance", domain: "compliance", cadence: "Annual", desc: "FLSA, EEO-1, pay transparency, AAP, and government contractor compliance management.", taskCount: 10 },
+      { id: "pay-transparency", name: "Pay Transparency & Reporting", domain: "compliance", cadence: "Annual", desc: "Pay range disclosure compliance, pay gap reporting, and internal equity communications.", taskCount: 8 },
+      { id: "comp-governance", name: "Compensation Governance", domain: "compliance", cadence: "Annual", desc: "Compensation philosophy, policies, approval authorities, and risk management documentation.", taskCount: 8 },
+      { id: "survey-mgmt", name: "Survey Participation & Management", domain: "operations", cadence: "Annual", desc: "Management of compensation survey vendor relationships, submissions, and data library.", taskCount: 8 },
+      { id: "hris-tech", name: "HRIS & Technology Management", domain: "operations", cadence: "Annual", desc: "Compensation system configuration, reporting, data quality, and technology roadmap.", taskCount: 8 },
+      { id: "budget-planning", name: "Budget & Financial Planning", domain: "operations", cadence: "Annual", desc: "Total compensation budgeting, forecasting, variance analysis, and financial audit support.", taskCount: 8 },
+      { id: "team-stakeholder", name: "Team & Stakeholder Management", domain: "operations", cadence: "Annual", desc: "Team development, manager training, HRBP support, and stakeholder communication cadence.", taskCount: 6 },
+    ];
+
+    const API_BASE = "/api";
+
+    // ==================== TOAST COMPONENT ====================
+    function Toast({ message, type = "success", onClose }) {
+      useEffect(() => {
+        const timer = setTimeout(onClose, 3000);
+        return () => clearTimeout(timer);
+      }, [onClose]);
+
+      const bgColor = type === "success" ? "bg-green-500" : "bg-red-500";
+      return (
+        <div className={`toast-enter fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded shadow-lg z-50`}>
+          {message}
+        </div>
+      );
+    }
+
+    // ==================== ICON SELECTOR ====================
+    function getDomainIcon(domainId) {
+      const iconType = DOMAIN_META[domainId]?.icon;
+      const props = { size: 16, color: "currentColor" };
+      switch (iconType) {
+        case "dollar": return <DollarSign {...props} />;
+        case "target": return <Target {...props} />;
+        case "briefcase": return <Briefcase {...props} />;
+        case "globe": return <Globe {...props} />;
+        case "shield": return <Shield {...props} />;
+        case "settings": return <Settings {...props} />;
+        default: return null;
+      }
+    }
+
+    // ==================== MAIN APP ====================
+    function CompTaskHub() {
+      const [view, setView] = useState("dashboard");
+      const [tasks, setTasks] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [selectedTask, setSelectedTask] = useState(null);
+      const [expandedDomains, setExpandedDomains] = useState({});
+      const [searchQuery, setSearchQuery] = useState("");
+      const [filters, setFilters] = useState({ status: null, priority: null, owner: null });
+      const [selectedBoard, setSelectedBoard] = useState(null);
+      const [addTaskBoard, setAddTaskBoard] = useState(null);
+      const [toast, setToast] = useState(null);
+
+      // Fetch tasks from API
+      const fetchTasks = useCallback(async () => {
+        try {
+          const res = await fetch(`${API_BASE}/tasks`);
+          if (!res.ok) throw new Error("Failed to fetch tasks");
+          const data = await res.json();
+          setTasks(data || []);
+        } catch (err) {
+          console.error("Fetch error:", err);
+          setToast({ message: "Failed to load tasks", type: "error" });
+        } finally {
+          setLoading(false);
+        }
+      }, []);
+
+      // Initial fetch and polling
+      useEffect(() => {
+        fetchTasks();
+        const pollInterval = setInterval(fetchTasks, 5000);
+        return () => clearInterval(pollInterval);
+      }, [fetchTasks]);
+
+      // API calls for mutations
+      const updateTask = useCallback(async (taskId, updates) => {
+        try {
+          const res = await fetch(`${API_BASE}/tasks/${taskId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updates),
+          });
+          if (!res.ok) throw new Error("Failed to update task");
+          await fetchTasks();
+          setToast({ message: "Task updated", type: "success" });
+        } catch (err) {
+          console.error("Update error:", err);
+          setToast({ message: "Failed to update task", type: "error" });
+        }
+      }, [fetchTasks]);
+
+      const deleteTask = useCallback(async (taskId) => {
+        if (!window.confirm("Delete this task? This cannot be undone.")) return;
+        try {
+          const res = await fetch(`${API_BASE}/tasks/${taskId}`, { method: "DELETE" });
+          if (!res.ok) throw new Error("Failed to delete task");
+          await fetchTasks();
+          setSelectedTask(null);
+          setToast({ message: "Task deleted", type: "success" });
+        } catch (err) {
+          console.error("Delete error:", err);
+          setToast({ message: "Failed to delete task", type: "error" });
+        }
+      }, [fetchTasks]);
+
+      const createTask = useCallback(async (newTask) => {
+        try {
+          const res = await fetch(`${API_BASE}/tasks`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newTask),
+          });
+          if (!res.ok) throw new Error("Failed to create task");
+          await fetchTasks();
+          setAddTaskBoard(null);
+          setToast({ message: "Task created", type: "success" });
+        } catch (err) {
+          console.error("Create error:", err);
+          setToast({ message: "Failed to create task", type: "error" });
+        }
+      }, [fetchTasks]);
+
+      const resetToTemplate = useCallback(async () => {
+        if (!window.confirm("Reset all tasks to template defaults? This will delete all custom changes.")) return;
+        try {
+          const res = await fetch(`${API_BASE}/seed`, { method: "POST" });
+          if (!res.ok) throw new Error("Failed to reset");
+          await fetchTasks();
+          setToast({ message: "Tasks reset to defaults", type: "success" });
+        } catch (err) {
+          console.error("Reset error:", err);
+          setToast({ message: "Failed to reset tasks", type: "error" });
+        }
+      }, [fetchTasks]);
+
+      const toggleDomain = (domainId) => {
+        setExpandedDomains(prev => ({ ...prev, [domainId]: !prev[domainId] }));
+      };
+
+      // Filtered and searched tasks
+      const filteredTasks = useMemo(() => {
+        return tasks.filter(task => {
+          if (searchQuery && !task.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+          if (filters.status && task.status !== filters.status) return false;
+          if (filters.priority && task.priority !== filters.priority) return false;
+          if (filters.owner && task.owner !== filters.owner) return false;
+          return true;
+        });
+      }, [tasks, searchQuery, filters]);
+
+      // Dashboard metrics
+      const metrics = useMemo(() => {
+        const now = new Date();
+        const total = tasks.length;
+        const inProgress = tasks.filter(t => t.status === "in_progress").length;
+        const completed = tasks.filter(t => t.status === "complete").length;
+        const overdue = tasks.filter(t => {
+          const dueDate = new Date(t.dueDate);
+          return dueDate < now && t.status !== "complete";
+        }).length;
+        return { total, inProgress, completed, overdue };
+      }, [tasks]);
+
+      // Domain progress
+      const domainProgress = useMemo(() => {
+        const progress = {};
+        Object.keys(DOMAIN_META).forEach(domainId => {
+          const domainTasks = tasks.filter(t => t.domainId === domainId);
+          const completedCount = domainTasks.filter(t => t.status === "complete").length;
+          progress[domainId] = {
+            total: domainTasks.length,
+            completed: completedCount,
+            percent: domainTasks.length > 0 ? Math.round((completedCount / domainTasks.length) * 100) : 0,
+          };
+        });
+        return progress;
+      }, [tasks]);
+
+      // Monthly distribution
+      const monthlyData = useMemo(() => {
+        const data = MONTHS.map((month, idx) => ({
+          name: month,
+          tasks: tasks.filter(t => t.month === idx + 1).length,
+        }));
+        return data;
+      }, [tasks]);
+
+      // Upcoming deadlines
+      const upcomingDeadlines = useMemo(() => {
+        const now = new Date();
+        return tasks
+          .filter(t => t.status !== "complete" && new Date(t.dueDate) >= now)
+          .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+          .slice(0, 5);
+      }, [tasks]);
+
+      // Recently completed
+      const recentlyCompleted = useMemo(() => {
+        return tasks
+          .filter(t => t.status === "complete")
+          .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+          .slice(0, 5);
+      }, [tasks]);
+
+      // Toggle status
+      const cycleStatus = (task) => {
+        const statuses = ["not_started", "in_progress", "in_review", "complete", "blocked"];
+        const currentIdx = statuses.indexOf(task.status);
+        const nextStatus = statuses[(currentIdx + 1) % statuses.length];
+        updateTask(task.id, { status: nextStatus });
+      };
+
+      // ==================== RENDER VIEWS ====================
+
+      // Dashboard View
+      const DashboardView = () => (
+        <div className="space-y-6">
+          <div className="grid grid-cols-4 gap-4">
+            <MetricCard label="Total Tasks" value={metrics.total} icon={<List size={24} color="currentColor" />} color="bg-blue-50" />
+            <MetricCard label="In Progress" value={metrics.inProgress} icon={<Clock size={24} color="currentColor" />} color="bg-purple-50" />
+            <MetricCard label="Overdue" value={metrics.overdue} icon={<AlertTriangle size={24} color="currentColor" />} color="bg-red-50" />
+            <MetricCard label="Completed" value={metrics.completed} icon={<CheckCircle2 size={24} color="currentColor" />} color="bg-green-50" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-6">
+            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+              <h3 className="text-lg font-semibold mb-4">Domain Progress</h3>
+              <div className="space-y-3">
+                {Object.entries(DOMAIN_META).map(([domainId, meta]) => {
+                  const prog = domainProgress[domainId];
+                  return (
+                    <div key={domainId}>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm font-medium text-gray-700">{meta.name}</span>
+                        <span className="text-sm text-gray-500">{prog.completed}/{prog.total}</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="h-2 rounded-full" style={{width: `${prog.percent}%`, backgroundColor: meta.color}}></div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+              <h3 className="text-lg font-semibold mb-4">Monthly Distribution</h3>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={monthlyData}>
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="tasks" fill="#3B82F6" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6">
+            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><Clock size={20} />Upcoming Deadlines</h3>
+              <div className="space-y-2">
+                {upcomingDeadlines.map(task => (
+                  <div key={task.id} className="p-3 bg-gray-50 rounded border border-gray-200 hover:bg-gray-100 cursor-pointer" onClick={() => setSelectedTask(task)}>
+                    <div className="flex justify-between items-start">
+                      <span className="font-medium text-sm">{task.title}</span>
+                      <span className="text-xs text-gray-500">{new Date(task.dueDate).toLocaleDateString()}</span>
+                    </div>
+                    <span className="text-xs text-gray-600">{task.boardName}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><CheckCircle2 size={20} />Recently Completed</h3>
+              <div className="space-y-2">
+                {recentlyCompleted.map(task => (
+                  <div key={task.id} className="p-3 bg-gray-50 rounded border border-gray-200 hover:bg-gray-100 cursor-pointer" onClick={() => setSelectedTask(task)}>
+                    <div className="flex justify-between items-start">
+                      <span className="font-medium text-sm">{task.title}</span>
+                      <span className="text-xs text-gray-500">{new Date(task.updatedAt).toLocaleDateString()}</span>
+                    </div>
+                    <span className="text-xs text-gray-600">{task.boardName}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
+      // All Tasks View
+      const AllTasksView = () => (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="p-6 border-b border-gray-200 space-y-4">
+            <div className="flex gap-4 items-center">
+              <div className="flex-1 relative">
+                <Search size={18} className="absolute left-3 top-3 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search tasks..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <select value={filters.status || ""} onChange={e => setFilters({...filters, status: e.target.value || null})} className="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                <option value="">All Statuses</option>
+                {STATUSES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+              </select>
+              <select value={filters.priority || ""} onChange={e => setFilters({...filters, priority: e.target.value || null})} className="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                <option value="">All Priorities</option>
+                {PRIORITIES.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+              </select>
+              <select value={filters.owner || ""} onChange={e => setFilters({...filters, owner: e.target.value || null})} className="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                <option value="">All Owners</option>
+                {OWNERS.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">Title</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">Board</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">Owner</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">Priority</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">Due Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredTasks.map(task => {
+                  const statusMeta = STATUSES.find(s => s.id === task.status);
+                  const priorityMeta = PRIORITIES.find(p => p.id === task.priority);
+                  return (
+                    <tr key={task.id} className="task-row border-b border-gray-200 cursor-pointer" onClick={() => setSelectedTask(task)}>
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{task.title}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{task.boardName}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{task.owner}</td>
+                      <td className="px-6 py-4 text-sm">
+                        <span className="px-2 py-1 rounded text-xs font-medium" style={{backgroundColor: statusMeta.bg, color: statusMeta.color}}>
+                          {statusMeta.label}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm">
+                        <span className="px-2 py-1 rounded text-xs font-medium" style={{backgroundColor: priorityMeta.color + "20", color: priorityMeta.color}}>
+                          {priorityMeta.label}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{new Date(task.dueDate).toLocaleDateString()}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+
+      // Calendar View
+      const CalendarView = () => (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold mb-6">Task Distribution by Month</h3>
+          <div className="grid grid-cols-4 gap-4">
+            {MONTHS.map((month, idx) => {
+              const monthTasks = tasks.filter(t => t.month === idx + 1);
+              return (
+                <div key={month} className="p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:shadow-md cursor-pointer transition"
+                  onClick={() => {
+                    setView("all-tasks");
+                    setFilters({ status: null, priority: null, owner: null });
+                    setSearchQuery("");
+                  }}
+                >
+                  <div className="font-semibold text-gray-700">{month}</div>
+                  <div className="text-2xl font-bold text-blue-600 mt-2">{monthTasks.length}</div>
+                  <div className="text-xs text-gray-500 mt-2">
+                    {monthTasks.filter(t => t.status === "complete").length} completed
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+
+      // Templates View
+      const TemplatesView = () => (
+        <div className="space-y-6">
+          {Object.entries(DOMAIN_META).map(([domainId, meta]) => {
+            const domainBoards = BOARDS.filter(b => b.domain === domainId);
+            const expanded = expandedDomains[domainId];
+            return (
+              <div key={domainId} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div
+                  className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50"
+                  onClick={() => toggleDomain(domainId)}
+                >
+                  <div className="flex items-center gap-3">
+                    {getDomainIcon(domainId)}
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{meta.name}</h3>
+                      <p className="text-sm text-gray-500">{domainBoards.length} boards</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-600">{domainBoards.length}</span>
+                    {expanded ? <ChevronDown size={20} color="currentColor" /> : <ChevronRight size={20} color="currentColor" />}
+                  </div>
+                </div>
+
+                {expanded && (
+                  <div className="border-t border-gray-200 divide-y divide-gray-200">
+                    {domainBoards.map(board => {
+                      const boardTasks = tasks.filter(t => t.boardId === board.id);
+                      const completed = boardTasks.filter(t => t.status === "complete").length;
+                      return (
+                        <div key={board.id} className="p-4 hover:bg-gray-50 cursor-pointer transition" onClick={() => setSelectedBoard(board)}>
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <h4 className="font-medium text-gray-900">{board.name}</h4>
+                              <p className="text-sm text-gray-500 mt-1">{board.desc}</p>
+                            </div>
+                            <span className="text-xs font-medium px-2 py-1 bg-gray-200 text-gray-700 rounded">{board.cadence}</span>
+                          </div>
+                          <div className="flex justify-between items-center mt-3">
+                            <div className="flex-1 mr-3">
+                              <div className="flex justify-between mb-1">
+                                <span className="text-xs text-gray-600">Progress</span>
+                                <span className="text-xs font-medium text-gray-700">{completed}/{boardTasks.length}</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div className="h-2 rounded-full" style={{width: `${boardTasks.length > 0 ? (completed / boardTasks.length) * 100 : 0}%`, backgroundColor: meta.color}}></div>
+                              </div>
+                            </div>
+                            <button className="px-3 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded" onClick={() => setSelectedBoard(board)}>
+                              View
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      );
+
+      // Board View
+      const BoardDetailView = () => {
+        const boardTasks = tasks.filter(t => t.boardId === selectedBoard.id);
+        const domainMeta = DOMAIN_META[selectedBoard.domain];
+        return (
+          <div className="space-y-4">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <button className="text-sm text-blue-600 hover:underline mb-2" onClick={() => setSelectedBoard(null)}>
+                    &larr; Back to Templates
+                  </button>
+                  <h2 className="text-2xl font-bold text-gray-900">{selectedBoard.name}</h2>
+                  <p className="text-gray-600 mt-2">{selectedBoard.desc}</p>
+                  <div className="flex gap-4 mt-4">
+                    <span className="flex items-center gap-1 text-sm text-gray-600">
+                      {getDomainIcon(selectedBoard.domain)}
+                      {domainMeta.name}
+                    </span>
+                    <span className="text-sm text-gray-600">Cadence: {selectedBoard.cadence}</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setAddTaskBoard(selectedBoard.id)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                >
+                  <Plus size={18} /> Add Task
+                </button>
+              </div>
+
+              <div className="flex justify-between mb-4">
+                <span className="text-sm font-medium text-gray-700">{boardTasks.length} total tasks</span>
+                <span className="text-sm font-medium text-gray-700">{boardTasks.filter(t => t.status === "complete").length} completed</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3 mb-6">
+                <div
+                  className="h-3 rounded-full transition-all"
+                  style={{
+                    width: `${boardTasks.length > 0 ? (boardTasks.filter(t => t.status === "complete").length / boardTasks.length) * 100 : 0}%`,
+                    backgroundColor: domainMeta.color,
+                  }}
+                ></div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">Title</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">Owner</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">Priority</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">Due Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {boardTasks.map(task => {
+                      const statusMeta = STATUSES.find(s => s.id === task.status);
+                      const priorityMeta = PRIORITIES.find(p => p.id === task.priority);
+                      return (
+                        <tr key={task.id} className="task-row border-b border-gray-200 cursor-pointer" onClick={() => setSelectedTask(task)}>
+                          <td className="px-6 py-4 text-sm font-medium text-gray-900">{task.title}</td>
+                          <td className="px-6 py-4 text-sm text-gray-600">{task.owner}</td>
+                          <td className="px-6 py-4 text-sm">
+                            <span className="px-2 py-1 rounded text-xs font-medium cursor-pointer" style={{backgroundColor: statusMeta.bg, color: statusMeta.color}} onClick={(e) => { e.stopPropagation(); cycleStatus(task); }}>
+                              {statusMeta.label}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm">
+                            <span className="px-2 py-1 rounded text-xs font-medium" style={{backgroundColor: priorityMeta.color + "20", color: priorityMeta.color}}>
+                              {priorityMeta.label}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-600">{new Date(task.dueDate).toLocaleDateString()}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      if (loading) {
+        return (
+          <div className="flex items-center justify-center h-screen bg-gray-50">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading tasks...</p>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="flex h-screen bg-gray-50">
+          {/* Sidebar */}
+          <div className="w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white flex flex-col">
+            <div className="p-6 border-b border-slate-700">
+              <h1 className="text-xl font-bold flex items-center gap-2">
+                <DollarSign size={24} /> CompHub
+              </h1>
+              <p className="text-sm text-slate-400 mt-1">Comp Ops Center</p>
+            </div>
+
+            <nav className="flex-1 overflow-y-auto p-4 space-y-2">
+              {[
+                { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+                { id: "all-tasks", label: "All Tasks", icon: List },
+                { id: "calendar", label: "Calendar", icon: Calendar },
+                { id: "templates", label: "Templates", icon: Layers },
+              ].map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => setView(item.id)}
+                  className={`w-full px-4 py-3 rounded-lg flex items-center gap-3 text-sm font-medium transition ${
+                    view === item.id ? "bg-blue-600 text-white" : "text-slate-300 hover:bg-slate-700"
+                  }`}
+                >
+                  <item.icon size={18} /> {item.label}
+                </button>
+              ))}
+            </nav>
+
+            <div className="p-4 border-t border-slate-700">
+              <button
+                onClick={resetToTemplate}
+                className="w-full px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
+              >
+                <RefreshCw size={16} /> Reset to Defaults
+              </button>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col">
+            <header className="bg-white border-b border-gray-200 px-8 py-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {view === "dashboard" && "Dashboard"}
+                  {view === "all-tasks" && "All Tasks"}
+                  {view === "calendar" && "Calendar"}
+                  {view === "templates" && "Templates"}
+                </h2>
+              </div>
+              <div className="flex items-center gap-4">
+                <button className="p-2 hover:bg-gray-100 rounded-lg" onClick={fetchTasks} title="Refresh">
+                  <RefreshCw size={20} color="currentColor" />
+                </button>
+              </div>
+            </header>
+
+            <main className="flex-1 overflow-y-auto p-8">
+              {view === "dashboard" && <DashboardView />}
+              {view === "all-tasks" && <AllTasksView />}
+              {view === "calendar" && <CalendarView />}
+              {view === "templates" && <TemplatesView />}
+              {selectedBoard && <BoardDetailView />}
+            </main>
+          </div>
+
+          {/* Task Detail Modal */}
+          {selectedTask && <TaskDetailModal task={selectedTask} onClose={() => setSelectedTask(null)} onUpdate={updateTask} onDelete={deleteTask} />}
+
+          {/* Add Task Modal */}
+          {addTaskBoard && <AddTaskModal boardId={addTaskBoard} onClose={() => setAddTaskBoard(null)} onCreate={createTask} />}
+
+          {/* Toast */}
+          {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+        </div>
+      );
+    }
+
+    // ==================== HELPER COMPONENTS ====================
+
+    function MetricCard({ label, value, icon, color }) {
+      return (
+        <div className={`${color} rounded-lg p-6 border border-gray-200`}>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-gray-600 text-sm font-medium">{label}</p>
+              <p className="text-3xl font-bold text-gray-900 mt-2">{value}</p>
+            </div>
+            <div className="text-gray-400">{icon}</div>
+          </div>
+        </div>
+      );
+    }
+
+    function TaskDetailModal({ task, onClose, onUpdate, onDelete }) {
+      const [editMode, setEditMode] = useState(false);
+      const [owner, setOwner] = useState(task.owner);
+      const [priority, setPriority] = useState(task.priority);
+      const [dueDate, setDueDate] = useState(task.dueDate.split("T")[0]);
+      const [notes, setNotes] = useState(task.notes || "");
+
+      const handleSave = () => {
+        onUpdate(task.id, { owner, priority, dueDate, notes });
+        setEditMode(false);
+      };
+
+      const statusMeta = STATUSES.find(s => s.id === task.status);
+      const priorityMeta = PRIORITIES.find(p => p.id === task.priority);
+      const boardMeta = BOARDS.find(b => b.id === task.boardId);
+
+      return (
+        <div className="fixed inset-0 modal-overlay z-40" onClick={onClose}>
+          <div className="fixed right-0 top-0 bottom-0 w-96 bg-white shadow-lg overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white">
+              <h3 className="text-lg font-bold text-gray-900">Task Details</h3>
+              <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
+                <X size={20} color="currentColor" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">{task.title}</h4>
+                <p className="text-sm text-gray-600">{task.boardName}</p>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-2">Status</label>
+                <div className="flex flex-wrap gap-2">
+                  {STATUSES.map(s => (
+                    <button
+                      key={s.id}
+                      onClick={() => onUpdate(task.id, { status: s.id })}
+                      className="px-3 py-2 rounded text-xs font-medium transition"
+                      style={{
+                        backgroundColor: task.status === s.id ? s.color : s.bg,
+                        color: task.status === s.id ? "white" : s.color,
+                      }}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {editMode ? (
+                <>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 block mb-2">Owner</label>
+                    <select value={owner} onChange={e => setOwner(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                      {OWNERS.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 block mb-2">Priority</label>
+                    <select value={priority} onChange={e => setPriority(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                      {PRIORITIES.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 block mb-2">Due Date</label>
+                    <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 block mb-2">Notes</label>
+                    <textarea value={notes} onChange={e => setNotes(e.target.value)} rows="3" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-sans"></textarea>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button onClick={handleSave} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm flex items-center justify-center gap-2">
+                      <Save size={16} /> Save Changes
+                    </button>
+                    <button onClick={() => setEditMode(false)} className="flex-1 px-4 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 font-medium text-sm">
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-600 mb-1">Owner</p>
+                      <p className="font-medium text-gray-900">{task.owner}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600 mb-1">Priority</p>
+                      <span className="px-2 py-1 rounded text-xs font-medium" style={{backgroundColor: priorityMeta.color + "20", color: priorityMeta.color}}>
+                        {priorityMeta.label}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-gray-600 mb-1">Due Date</p>
+                      <p className="font-medium text-gray-900">{new Date(task.dueDate).toLocaleDateString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600 mb-1">Month</p>
+                      <p className="font-medium text-gray-900">{MONTHS[task.month - 1]}</p>
+                    </div>
+                  </div>
+
+                  {task.notes && (
+                    <div>
+                      <p className="text-sm text-gray-600 mb-2">Notes</p>
+                      <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded border border-gray-200">{task.notes}</p>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <button onClick={() => setEditMode(true)} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm flex items-center justify-center gap-2">
+                      <Edit3 size={16} /> Edit
+                    </button>
+                    <button onClick={() => onDelete(task.id)} className="flex-1 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 font-medium text-sm flex items-center justify-center gap-2">
+                      <Trash2 size={16} /> Delete
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function AddTaskModal({ boardId, onClose, onCreate }) {
+      const [title, setTitle] = useState("");
+      const [owner, setOwner] = useState("Analyst");
+      const [priority, setPriority] = useState("medium");
+      const [month, setMonth] = useState("1");
+      const [dueDate, setDueDate] = useState(new Date().toISOString().split("T")[0]);
+      const [notes, setNotes] = useState("");
+
+      const board = BOARDS.find(b => b.id === boardId);
+
+      const handleCreate = () => {
+        if (!title.trim()) return;
+        onCreate({
+          title,
+          owner,
+          priority,
+          month: parseInt(month),
+          dueDate,
+          notes,
+          status: "not_started",
+          boardId,
+          boardName: board.name,
+          domainId: board.domain,
+          domainName: DOMAIN_META[board.domain].name,
+        });
+      };
+
+      return (
+        <div className="fixed inset-0 modal-overlay z-40 flex items-center justify-center" onClick={onClose}>
+          <div className="bg-white rounded-lg shadow-lg p-6 w-96" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Add Task to {board.name}</h3>
+              <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
+                <X size={20} color="currentColor" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">Title *</label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  placeholder="Task title"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 block mb-1">Owner</label>
+                  <select value={owner} onChange={e => setOwner(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                    {OWNERS.map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-gray-700 block mb-1">Priority</label>
+                  <select value={priority} onChange={e => setPriority(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                    {PRIORITIES.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 block mb-1">Month</label>
+                  <select value={month} onChange={e => setMonth(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                    {MONTHS.map((m, idx) => <option key={idx} value={idx + 1}>{m}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-gray-700 block mb-1">Due Date</label>
+                  <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">Notes</label>
+                <textarea
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  placeholder="Optional notes..."
+                  rows="3"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-sans"
+                ></textarea>
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <button
+                  onClick={handleCreate}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm"
+                >
+                  Create Task
+                </button>
+                <button
+                  onClick={onClose}
+                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 font-medium text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Render the app
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<CompTaskHub />);
+  </script>
+</body>
+</html>
